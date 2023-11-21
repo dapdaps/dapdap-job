@@ -7,7 +7,7 @@ basedir=$(cd "$(dirname "$0")"; pwd)
 cd ${basedir}
 
 function getpid() {
-  pid=`netstat -ntlp|grep bin/job|awk '{printf $7}'|cut -d/ -f1`
+  pid=`ps -ef|grep bin/job | grep -v 'grep' | awk '{printf $2}'|cut -d/ -f1`
 }
 
 function build() {
