@@ -24,6 +24,10 @@ func main() {
 	service.Init(conf.Conf)
 	log.Info("dapdap-job service init")
 
+	go func() {
+		service.DapdapService.StartActionTask()
+	}()
+
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT, syscall.SIGSTOP)
 	s := <-c

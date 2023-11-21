@@ -54,7 +54,7 @@ func (s *Service) InitAction() (err error) {
 	return
 }
 
-func (s *Service) StartTask() {
+func (s *Service) StartActionTask() {
 	for {
 		log.Info("ActionTask maxDappRecordId:%d maxChainRecordId:%d time:%d", maxDappId, maxChainId, time.Now().Unix())
 		_ = s.ActionTask()
