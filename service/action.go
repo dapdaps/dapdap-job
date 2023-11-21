@@ -56,6 +56,7 @@ func (s *Service) InitAction() (err error) {
 
 func (s *Service) StartTask() {
 	for {
+		log.Info("ActionTask maxDappRecordId:%d maxChainRecordId:%d time:%d", maxDappId, maxChainId, time.Now().Unix())
 		_ = s.ActionTask()
 		time.Sleep(time.Second * 5)
 	}
