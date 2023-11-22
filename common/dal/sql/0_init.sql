@@ -20,4 +20,5 @@ CREATE TABLE "t_action_chain" (
     "updated_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX "idx_action_chain_record_id" ON "t_action_chain" ("record_id");
+CREATE INDEX "idx_action_chain_network_count" ON "t_action_chain" ("action_network_id","count");
 CREATE UNIQUE INDEX "idx_action_chain_title_template_network" ON "t_action_chain" ("action_title","template","action_network_id");
