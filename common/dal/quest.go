@@ -16,6 +16,7 @@ const (
 	FindUserRewardByIdSql                   = `select reward from user_reward where account_id=$1`
 	UpdateUserRewardByIdSql                 = `insert into user_reward(account_id,reward,updated_at) VALUES($1,$2,$3) ON CONFLICT (account_id) DO UPDATE SET reward=EXCLUDED.reward,updated_at=EXCLUDED.updated_at`
 	FindQuestCampaignRewardByAccountIdSql   = `select reward from quest_campaign_reward where account_id=$1 and quest_campaign_id=$2`
+	FindQuestCampaignRewardByCampaignIdSql  = `select id,quest_campaign_id,account_id,reward,rank from quest_campaign_reward where quest_campaign_id=$1`
 	UpdateQuestCampaignRewardByAccountIdSql = `insert into quest_campaign_reward(account_id,quest_campaign_id,reward,updated_at) VALUES($1,$2,$3,$4) ON CONFLICT (account_id,quest_campaign_id) DO UPDATE SET reward=EXCLUDED.reward,updated_at=EXCLUDED.updated_at`
 	UpdateQuestCampaignSql                  = `update quest_campaign set total_users=$1,total_reward=$2,total_quest_execution=$3,updated_at=$4 where id=$5`
 	UpdateQuestCampaignStatusSql            = `update quest_campaign set status=$1 where id=$2`

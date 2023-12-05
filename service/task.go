@@ -38,8 +38,12 @@ func (s *Service) StartTask() {
 		}
 		for {
 			log.Info("QuestTask maxQuestActionRecordId:%d time:%d", maxQuestActionRecordId, time.Now().Unix())
-			s.StartQuestTask()
-			time.Sleep(time.Second * time.Duration(questInterval))
+			err = s.StartQuestTask()
+			if err != nil {
+				time.Sleep(time.Second * 5)
+			} else {
+				time.Sleep(time.Second * time.Duration(questInterval))
+			}
 		}
 	}()
 }
