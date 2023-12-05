@@ -41,7 +41,7 @@ func (d *Dao) FindAllQuestCampaign() (data []*model.QuestCampaign, err error) {
 		var (
 			questCampaign = &model.QuestCampaign{}
 		)
-		if err = rows.Scan(&questCampaign.Id); err != nil {
+		if err = rows.Scan(&questCampaign.Id, &questCampaign.TotalUsers, &questCampaign.TotalReward, &questCampaign.TotalQuestExecution); err != nil {
 			return
 		}
 		data = append(data, questCampaign)
@@ -258,7 +258,7 @@ func (d *Dao) FindQuestCampaignReward(accountId int, questCampaignId int) (rewar
 	return
 }
 
-func (d *Dao) UpdateUserQuest(accountId int, questCampaignId int, reward int, questCampaignReward int, userQuests []*model.UserQuest, useQuestActions []*model.UserQuestAction) (err error) {
+func (d *Dao) UpdateUserQuest(accountId int, questCampaignId int, reward int, questCampaignReward int, questCampaign *model.QuestCampaign, userQuests []*model.UserQuest, useQuestActions []*model.UserQuestAction) (err error) {
 	timestamp := time.Now()
 	err = d.WithTrx(func(db *sql.Tx) (err error) {
 		for _, userQuest := range userQuests {
@@ -281,6 +281,12 @@ func (d *Dao) UpdateUserQuest(accountId int, questCampaignId int, reward int, qu
 		}
 		if questCampaignReward > 0 {
 			_, err = db.Exec(dal.UpdateQuestCampaignRewardByAccountIdSql, accountId, questCampaignId, questCampaignReward, timestamp)
+			if err != nil {
+				return
+			}
+		}
+		if questCampaign != nil {
+			_, err = db.Exec(dal.UpdateQuestCampaignSql, questCampaign.TotalUsers, questCampaign.TotalReward, questCampaign.TotalQuestExecution, timestamp, questCampaignId)
 			if err != nil {
 				return
 			}

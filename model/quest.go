@@ -1,7 +1,10 @@
 package model
 
 type QuestCampaign struct {
-	Id int
+	Id                  int
+	TotalUsers          int
+	TotalReward         int
+	TotalQuestExecution int
 }
 
 type Quest struct {

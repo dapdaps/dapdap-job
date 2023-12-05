@@ -13,10 +13,11 @@ var (
 )
 
 type Config struct {
-	Debug   bool
-	Timeout int64
-	Log     *log.Config
-	Pgsql   *Pgsql
+	Debug         bool
+	Timeout       int64
+	QuestInterval int64
+	Log           *log.Config
+	Pgsql         *Pgsql
 }
 
 type Pgsql struct {

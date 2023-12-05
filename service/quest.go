@@ -39,7 +39,7 @@ func (s *Service) StartQuestTask() {
 	}
 	maxRecordId := data[len(data)-1].Id
 	for _, questCampaign := range questCampaigns {
-		err = s.QuestTask(questCampaign.Id, data)
+		err = s.QuestTask(questCampaign, data)
 		if err != nil {
 			return
 		}
@@ -55,7 +55,7 @@ func (s *Service) StartQuestTask() {
 	maxQuestActionRecordId = maxRecordId
 }
 
-func (s *Service) QuestTask(questCampaignId int, data []*model.Action) (err error) {
+func (s *Service) QuestTask(questCampaign *model.QuestCampaign, data []*model.Action) (err error) {
 	var (
 		allQuest                  map[int]*model.Quest
 		allQuestAction            map[int]*model.QuestAction
@@ -66,7 +66,7 @@ func (s *Service) QuestTask(questCampaignId int, data []*model.Action) (err erro
 		allUserQuests             map[int][]*model.UserQuest
 		allUserQuestActions       map[int][]*model.UserQuestAction
 	)
-	allQuest, err = s.dao.FindAllQuest(questCampaignId)
+	allQuest, err = s.dao.FindAllQuest(questCampaign.Id)
 	if err != nil {
 		log.Error("QuestTask s.dao.FindAllQuest error: %v", err)
 		return
@@ -74,7 +74,7 @@ func (s *Service) QuestTask(questCampaignId int, data []*model.Action) (err erro
 	if len(allQuest) == 0 {
 		return
 	}
-	allQuestAction, err = s.dao.FindAllQuestAction(questCampaignId)
+	allQuestAction, err = s.dao.FindAllQuestAction(questCampaign.Id)
 	if err != nil {
 		log.Error("QuestTask s.dao.FindAllQuestAction error: %v", err)
 		return
@@ -158,10 +158,14 @@ func (s *Service) QuestTask(questCampaignId int, data []*model.Action) (err erro
 			reward                  int
 			userReward              int
 			userQuestCampaignReward int
+			completedQuest          int
+			newParticipant          bool
+			updateQuestCampaign     *model.QuestCampaign
 		)
 		if accountId == 0 {
 			continue
 		}
+		newParticipant = len(userQuests) == 0
 		for _, userQuestActionRecord := range userQuestActionRecords {
 			var (
 				quest                   *model.Quest
@@ -268,9 +272,17 @@ func (s *Service) QuestTask(questCampaignId int, data []*model.Action) (err erro
 			if updateUserQuest.Status == model.UserQuestCompletedStatus {
 				quest := allQuest[updateUserQuest.QuestId]
 				reward += quest.Reward
+				completedQuest++
 			}
 		}
-
+		if newParticipant || completedQuest > 0 || reward > 0 {
+			updateQuestCampaign = questCampaign
+			updateQuestCampaign.TotalQuestExecution += completedQuest
+			updateQuestCampaign.TotalReward += reward
+			if newParticipant {
+				updateQuestCampaign.TotalUsers += 1
+			}
+		}
 		if reward > 0 {
 			userReward, err = s.dao.FindUserReward(accountId)
 			if err != nil {
@@ -278,14 +290,14 @@ func (s *Service) QuestTask(questCampaignId int, data []*model.Action) (err erro
 				return
 			}
 			userReward += reward
-			userQuestCampaignReward, err = s.dao.FindQuestCampaignReward(accountId, questCampaignId)
+			userQuestCampaignReward, err = s.dao.FindQuestCampaignReward(accountId, questCampaign.Id)
 			if err != nil {
 				log.Error("QuestTask s.dao.FindQuestCampaignReward error: %v", err)
 				return
 			}
 			userQuestCampaignReward += reward
 		}
-		err = s.dao.UpdateUserQuest(accountId, questCampaignId, userReward, userQuestCampaignReward, saveOrUpdateQuest, saveOrUpdateQuestAction)
+		err = s.dao.UpdateUserQuest(accountId, questCampaign.Id, userReward, userQuestCampaignReward, updateQuestCampaign, saveOrUpdateQuest, saveOrUpdateQuestAction)
 		if err != nil {
 			log.Error("QuestTask s.dao.UpdateUserQuest error: %v", err)
 			return

@@ -2,7 +2,7 @@ package dal
 
 const (
 	FindQuestActionRecordIdSql              = `select max(record_id) from t_action_quest`
-	FindQuestCampaignByStatusSql            = `select id from quest_campaign where status=$1 order by id asc`
+	FindQuestCampaignByStatusSql            = `select id,total_users,total_reward,total_quest_execution from quest_campaign where status=$1 order by id asc`
 	SaveQuestActionRecordIdSql              = `insert into t_action_quest(record_id) VALUES($1)`
 	UpdateQuestActionRecordIdSql            = `update t_action_quest set record_id=$1`
 	FindAllQuestByStatusIdSql               = `select id,quest_campaign_id,quest_category_id,total_action,status,reward from quest where quest_campaign_id=$1 and status=$2 order by id asc`
@@ -15,4 +15,5 @@ const (
 	UpdateUserRewardByIdSql                 = `insert into user_reward(account_id,reward,updated_at) VALUES($1,$2,$3) ON CONFLICT (account_id) DO UPDATE SET reward=EXCLUDED.reward,updated_at=EXCLUDED.updated_at`
 	FindQuestCampaignRewardByAccountIdSql   = `select reward from quest_campaign_reward where account_id=$1 and quest_campaign_id=$2`
 	UpdateQuestCampaignRewardByAccountIdSql = `insert into quest_campaign_reward(account_id,quest_campaign_id,reward,updated_at) VALUES($1,$2,$3,$4) ON CONFLICT (account_id,quest_campaign_id) DO UPDATE SET reward=EXCLUDED.reward,updated_at=EXCLUDED.updated_at`
+	UpdateQuestCampaignSql                  = `update quest_campaign set total_users=$1,total_reward=$2,total_quest_execution=$3,updated_at=$4 where id=$5`
 )
