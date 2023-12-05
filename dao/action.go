@@ -8,6 +8,24 @@ import (
 	"fmt"
 )
 
+func (d *Dao) ActionRows(rows *sql.Rows) (action *model.Action, err error) {
+	var (
+		amount sql.NullString
+		source sql.NullString
+	)
+	action = &model.Action{}
+	if err = rows.Scan(&action.Id, &action.AccountId, &action.ActionTitle, &action.ActionType, &action.ActionTokens, &amount, &action.Template, &action.ActionNetworkId, &action.DappId, &action.NetworkId, &action.DappCategoryId, &action.ToNetworkId, &source); err != nil {
+		return
+	}
+	if amount.Valid {
+		action.ActionAmount = amount.String
+	}
+	if source.Valid {
+		action.Source = source.String
+	}
+	return
+}
+
 func (d *Dao) FindActions(id uint64, limit uint64) (data []*model.Action, err error) {
 	var (
 		rows *sql.Rows
@@ -19,16 +37,11 @@ func (d *Dao) FindActions(id uint64, limit uint64) (data []*model.Action, err er
 		}
 		return
 	}
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
-		var (
-			action = &model.Action{}
-			amount sql.NullString
-		)
-		if err = rows.Scan(&action.Id, &action.AccountId, &action.ActionTitle, &action.ActionType, &action.ActionTokens, &amount, &action.Template, &action.ActionNetworkId); err != nil {
+		var action *model.Action
+		if action, err = d.ActionRows(rows); err != nil {
 			return
-		}
-		if amount.Valid {
-			action.ActionAmount = amount.String
 		}
 		data = append(data, action)
 	}
@@ -52,18 +65,13 @@ func (d *Dao) FindAllActions(id uint64) (data []*model.Action, err error) {
 		}
 		err = nil
 		for rows.Next() {
-			var (
-				action = &model.Action{}
-				amount sql.NullString
-			)
-			if err = rows.Scan(&action.Id, &action.AccountId, &action.ActionTitle, &action.ActionType, &action.ActionTokens, &amount, &action.Template, &action.ActionNetworkId); err != nil {
+			var action *model.Action
+			if action, err = d.ActionRows(rows); err != nil {
 				return
-			}
-			if amount.Valid {
-				action.ActionAmount = amount.String
 			}
 			data = append(data, action)
 		}
+		_ = rows.Close()
 		if data[len(data)-1].Id >= maxId {
 			return
 		}
@@ -148,6 +156,7 @@ func (d *Dao) FindActionsDapp() (data map[string]*model.ActionDapp, err error) {
 		}
 		return
 	}
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var (
 			action = &model.ActionDapp{}
@@ -191,6 +200,7 @@ func (d *Dao) FindActionsChain() (data map[string]*model.ActionChain, err error)
 			data[fmt.Sprintf("%s_%s_%s", action.ActionNetworkId, action.Template, action.ActionTitle)] = action
 			findMaxId = action.Id
 		}
+		_ = rows.Close()
 		if findMaxId >= maxId {
 			return
 		}

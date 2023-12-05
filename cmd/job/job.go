@@ -25,7 +25,7 @@ func main() {
 	log.Info("dapdap-job service init")
 
 	go func() {
-		service.DapdapService.StartActionTask()
+		service.DapdapService.StartTask()
 	}()
 
 	c := make(chan os.Signal, 1)

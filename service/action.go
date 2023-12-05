@@ -5,7 +5,6 @@ import (
 	"dapdap-job/model"
 	"fmt"
 	"strings"
-	"time"
 )
 
 var (
@@ -52,14 +51,6 @@ func (s *Service) InitAction() (err error) {
 		return
 	}
 	return
-}
-
-func (s *Service) StartActionTask() {
-	for {
-		log.Info("ActionTask maxDappRecordId:%d maxChainRecordId:%d time:%d", maxDappId, maxChainId, time.Now().Unix())
-		_ = s.ActionTask()
-		time.Sleep(time.Second * 5)
-	}
 }
 
 func (s *Service) ActionTask() (err error) {
