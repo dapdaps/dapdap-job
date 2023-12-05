@@ -2,6 +2,9 @@ package model
 
 type QuestCampaign struct {
 	Id                  int
+	StartTime           int64
+	EndTime             int64
+	Status              string
 	TotalUsers          int
 	TotalReward         int
 	TotalQuestExecution int
@@ -14,6 +17,8 @@ type Quest struct {
 	TotalAction     int
 	Status          string
 	Reward          int
+	StartTime       int64
+	EndTime         int64
 }
 
 type QuestAction struct {

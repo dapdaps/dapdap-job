@@ -295,3 +295,66 @@ func (d *Dao) UpdateUserQuest(accountId int, questCampaignId int, reward int, qu
 	})
 	return
 }
+
+func (d *Dao) FindUpdateStatusCampaign() (data []*model.QuestCampaign, err error) {
+	rows, err := d.db.Query(dal.FindQuestCampaignByNotStatusSql, model.QuestCampaignEndedStatus)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return
+	}
+	for rows.Next() {
+		var (
+			questCampaign = &model.QuestCampaign{}
+			status        sql.NullString
+		)
+		if err = rows.Scan(&questCampaign.Id, &questCampaign.StartTime, &questCampaign.EndTime, &status); err != nil {
+			return
+		}
+		if status.Valid {
+			questCampaign.Status = status.String
+		}
+		data = append(data, questCampaign)
+	}
+	return
+}
+
+func (d *Dao) UpdateQuestCampaignStatus(id int, status string) (err error) {
+	_, err = d.db.Exec(dal.UpdateQuestCampaignStatusSql, status, id)
+	return
+}
+
+func (d *Dao) FindUpdateStatusQuest() (data []*model.Quest, err error) {
+	rows, err := d.db.Query(dal.FindQuestByNotStatusSql, model.QuestEndedStatus)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return
+	}
+	for rows.Next() {
+		var (
+			quest  = &model.Quest{}
+			status sql.NullString
+		)
+		if err = rows.Scan(&quest.Id, &quest.StartTime, &quest.EndTime, &status); err != nil {
+			return
+		}
+		if status.Valid {
+			quest.Status = status.String
+		}
+		data = append(data, quest)
+	}
+	return
+}
+
+func (d *Dao) UpdateQuestStatus(id int, status string) (err error) {
+	_, err = d.db.Exec(dal.UpdateQuestStatusSql, status, id)
+	return
+}
+
+func (d *Dao) UpdateUserQuestStatus(questId int, status string) (err error) {
+	_, err = d.db.Exec(dal.UpdateUserQuestStatusSql, status, questId)
+	return
+}

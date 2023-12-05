@@ -8,6 +8,14 @@ import (
 
 func (s *Service) StartTask() {
 	go func() {
+		for {
+			log.Info("StatusTask time:%d", time.Now().Unix())
+			s.StartStatusTask()
+			time.Sleep(time.Second * 5)
+		}
+	}()
+
+	go func() {
 		err := s.InitAction()
 		if err != nil {
 			panic(err)

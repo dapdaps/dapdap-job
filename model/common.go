@@ -1,9 +1,13 @@
 package model
 
 const (
+	QuestCampaignUnStartStatus = "un_start"
 	QuestCampaignOnGoingStatus = "ongoing"
+	QuestCampaignEndedStatus   = "ended"
 
+	QuestUnStartStatus = "un_start"
 	QuestOnGoingStatus = "ongoing"
+	QuestEndedStatus   = "ended"
 
 	UserQuestActionCompletedStatus = "completed"
 	UserQuestActionInProcessStatus = "in_process"
