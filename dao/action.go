@@ -10,17 +10,28 @@ import (
 
 func (d *Dao) ActionRows(rows *sql.Rows) (action *model.Action, err error) {
 	var (
+		accountId       sql.NullString
+		amount          sql.NullString
 		actionTitle     sql.NullString
 		actionType      sql.NullString
 		actionTokens    sql.NullString
 		template        sql.NullString
 		actionNetworkId sql.NullString
-		amount          sql.NullString
+		dappId          sql.NullInt64
+		networkId       sql.NullInt64
+		dappCategoryId  sql.NullInt64
+		toNetworkId     sql.NullInt64
 		source          sql.NullString
 	)
 	action = &model.Action{}
-	if err = rows.Scan(&action.Id, &action.AccountId, &actionTitle, &actionType, &actionTokens, &amount, &template, &actionNetworkId, &action.DappId, &action.NetworkId, &action.DappCategoryId, &action.ToNetworkId, &source); err != nil {
+	if err = rows.Scan(&action.Id, &accountId, &actionTitle, &actionType, &actionTokens, &amount, &template, &actionNetworkId, &dappId, &networkId, &dappCategoryId, &toNetworkId, &source); err != nil {
 		return
+	}
+	if accountId.Valid {
+		action.AccountId = accountId.String
+	}
+	if amount.Valid {
+		action.ActionAmount = amount.String
 	}
 	if actionTitle.Valid {
 		action.ActionTitle = actionTitle.String
@@ -37,8 +48,17 @@ func (d *Dao) ActionRows(rows *sql.Rows) (action *model.Action, err error) {
 	if actionNetworkId.Valid {
 		action.ActionNetworkId = actionNetworkId.String
 	}
-	if amount.Valid {
-		action.ActionAmount = amount.String
+	if dappId.Valid {
+		action.DappId = int(dappId.Int64)
+	}
+	if networkId.Valid {
+		action.NetworkId = int(networkId.Int64)
+	}
+	if dappCategoryId.Valid {
+		action.DappCategoryId = int(dappCategoryId.Int64)
+	}
+	if toNetworkId.Valid {
+		action.ToNetworkId = int(toNetworkId.Int64)
 	}
 	if source.Valid {
 		action.Source = source.String
