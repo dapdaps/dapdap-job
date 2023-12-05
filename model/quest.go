@@ -1,17 +1,16 @@
 package model
 
-import (
-	"math/big"
-)
+type QuestCampaign struct {
+	Id int
+}
 
 type Quest struct {
 	Id              int
 	QuestCampaignId int
 	QuestCategoryId int
-	StartTime       big.Int
-	EndTime         big.Int
 	TotalAction     int
 	Status          string
+	Reward          int
 }
 
 type QuestAction struct {
@@ -31,8 +30,8 @@ type QuestAction struct {
 
 type UserQuest struct {
 	Id              int
-	QuestCampaignId int
 	QuestId         int
+	QuestCampaignId int
 	AccountId       int
 	ActionCompleted int
 	Status          string
@@ -40,10 +39,16 @@ type UserQuest struct {
 
 type UserQuestAction struct {
 	Id              int
-	QuestCampaignId int
-	QuestId         int
 	QuestActionId   int
+	QuestId         int
+	QuestCampaignId int
 	AccountId       int
 	Times           int
 	Status          string
+}
+
+type QuestCampaignReward struct {
+	QuestCampaignId int
+	AccountId       int
+	Reward          int
 }

@@ -10,12 +10,32 @@ import (
 
 func (d *Dao) ActionRows(rows *sql.Rows) (action *model.Action, err error) {
 	var (
-		amount sql.NullString
-		source sql.NullString
+		actionTitle     sql.NullString
+		actionType      sql.NullString
+		actionTokens    sql.NullString
+		template        sql.NullString
+		actionNetworkId sql.NullString
+		amount          sql.NullString
+		source          sql.NullString
 	)
 	action = &model.Action{}
-	if err = rows.Scan(&action.Id, &action.AccountId, &action.ActionTitle, &action.ActionType, &action.ActionTokens, &amount, &action.Template, &action.ActionNetworkId, &action.DappId, &action.NetworkId, &action.DappCategoryId, &action.ToNetworkId, &source); err != nil {
+	if err = rows.Scan(&action.Id, &action.AccountId, &actionTitle, &actionType, &actionTokens, &amount, &template, &actionNetworkId, &action.DappId, &action.NetworkId, &action.DappCategoryId, &action.ToNetworkId, &source); err != nil {
 		return
+	}
+	if actionTitle.Valid {
+		action.ActionTitle = actionTitle.String
+	}
+	if actionType.Valid {
+		action.ActionType = actionType.String
+	}
+	if actionTokens.Valid {
+		action.ActionTokens = actionTokens.String
+	}
+	if template.Valid {
+		action.Template = template.String
+	}
+	if actionNetworkId.Valid {
+		action.ActionNetworkId = actionNetworkId.String
 	}
 	if amount.Valid {
 		action.ActionAmount = amount.String
@@ -59,7 +79,7 @@ func (d *Dao) FindAllActions(id uint64) (data []*model.Action, err error) {
 		return
 	}
 	for {
-		rows, err = d.db.Query(dal.FindActionSql, id, id+limit)
+		rows, err = d.db.Query(dal.FindActionByBetweenSql, id, id+limit)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return
 		}
@@ -72,6 +92,9 @@ func (d *Dao) FindAllActions(id uint64) (data []*model.Action, err error) {
 			data = append(data, action)
 		}
 		_ = rows.Close()
+		if len(data) == 0 {
+			return
+		}
 		if data[len(data)-1].Id >= maxId {
 			return
 		}

@@ -13,20 +13,20 @@ func (s *Service) StartTask() {
 		}
 		for {
 			log.Info("ActionTask maxDappRecordId:%d maxChainRecordId:%d time:%d", maxDappId, maxChainId, time.Now().Unix())
-			_ = s.ActionTask()
+			_ = s.StartActionTask()
 			time.Sleep(time.Second * 5)
 		}
 	}()
 
-	//go func() {
-	//	err := s.InitQuest()
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	for {
-	//		log.Info("QuestTask maxQuestActionRecordId:%d time:%d", maxQuestActionRecordId, time.Now().Unix())
-	//		_ = s.QuestTask()
-	//		time.Sleep(time.Minute * 1)
-	//	}
-	//}()
+	go func() {
+		err := s.InitQuest()
+		if err != nil {
+			panic(err)
+		}
+		for {
+			log.Info("QuestTask maxQuestActionRecordId:%d time:%d", maxQuestActionRecordId, time.Now().Unix())
+			s.StartQuestTask()
+			time.Sleep(time.Minute * 1)
+		}
+	}()
 }

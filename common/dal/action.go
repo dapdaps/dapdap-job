@@ -1,8 +1,9 @@
 package dal
 
 const (
-	FindActionByLimitSql              = `select id,account_id,action_title,action_type,action_tokens,action_amount,template,action_network_id from t_action_record where id >= $1 order by id asc limit $2`
-	FindActionSql                     = `select id,account_id,action_title,action_type,action_tokens,action_amount,template,action_network_id,dapp_id,network_id,category_id,to_network_id,source from t_action_record where id between $1 and $2 order by id asc`
+	findActionSql                     = `select id,account_id,action_title,action_type,action_tokens,action_amount,template,action_network_id,dapp_id,network_id,category_id,to_network_id,source from t_action_record`
+	FindActionByLimitSql              = findActionSql + ` where id >= $1 order by id asc limit $2`
+	FindActionByBetweenSql            = findActionSql + ` where id between $1 and $2 order by id asc`
 	FindMaxRecordIdSql                = `select max(id) from t_action_record`
 	FindMaxRecordIdFromActionDappSql  = `select max(record_id) from t_action_dapp`
 	FindMaxRecordIdFromActionChainSql = `select max(record_id) from t_action_chain`

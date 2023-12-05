@@ -53,7 +53,7 @@ func (s *Service) InitAction() (err error) {
 	return
 }
 
-func (s *Service) ActionTask() (err error) {
+func (s *Service) StartActionTask() (err error) {
 	var (
 		minRecordId        uint64
 		maxRecordId        uint64
