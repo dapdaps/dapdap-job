@@ -56,9 +56,7 @@ type UserQuestAction struct {
 }
 
 type QuestCampaignReward struct {
-	Id              int
-	QuestCampaignId int
-	AccountId       int
-	Reward          int
-	Rank            int
+	Id        int
+	AccountId int
+	Reward    int
 }

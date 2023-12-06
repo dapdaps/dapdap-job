@@ -28,10 +28,6 @@ func (s *Service) StartTask() {
 	}()
 
 	go func() {
-		questInterval := int64(60)
-		if conf.Conf.QuestInterval > 0 {
-			questInterval = conf.Conf.QuestInterval
-		}
 		err := s.InitQuest()
 		if err != nil {
 			panic(err)
@@ -42,8 +38,16 @@ func (s *Service) StartTask() {
 			if err != nil {
 				time.Sleep(time.Second * 5)
 			} else {
-				time.Sleep(time.Second * time.Duration(questInterval))
+				time.Sleep(time.Second * time.Duration(conf.Conf.QuestInterval))
 			}
 		}
 	}()
+
+	//go func() {
+	//	for {
+	//		log.Info("RankTask time:%d", time.Now().Unix())
+	//		s.StartRankTask()
+	//		time.Sleep(time.Second * time.Duration(conf.Conf.RankInterval))
+	//	}
+	//}()
 }

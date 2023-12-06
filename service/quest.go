@@ -3,14 +3,13 @@ package service
 import (
 	"dapdap-job/common/log"
 	"dapdap-job/model"
-	"sort"
 	"strings"
 	"time"
 )
 
 var (
 	maxQuestActionRecordId uint64
-	questCampaignRewards   = map[int][]*model.QuestCampaignReward{}
+	//questCampaignRewards   = map[int]*model.QuestCampaignReward{}
 )
 
 func (s *Service) InitQuest() (err error) {
@@ -19,36 +18,21 @@ func (s *Service) InitQuest() (err error) {
 		return
 	}
 	log.Info("InitQuest maxQuestActionRecordId: %d", maxQuestActionRecordId)
-	questCampaigns, err := s.dao.FindAllQuestCampaign()
-	if err != nil {
-		log.Error("InitQuest s.dao.FindAllQuestCampaign error: %v", err)
-		return
-	}
-	err = s.InitQuestCampaignReward(questCampaigns)
-	if err != nil {
-		log.Error("InitQuest InitQuestCampaignReward error: %v", err)
-		return
-	}
+	//err = s.InitQuestCampaignReward()
+	//if err != nil {
+	//	log.Error("InitQuest InitQuestCampaignReward error: %v", err)
+	//	return
+	//}
 	return
 }
 
-func (s *Service) InitQuestCampaignReward(questCampaigns []*model.QuestCampaign) (err error) {
-	if len(questCampaigns) == 0 {
-		return
-	}
-	for _, questCampaign := range questCampaigns {
-		if _, ok := questCampaignRewards[questCampaign.Id]; ok {
-			continue
-		}
-		var questCampaignReward []*model.QuestCampaignReward
-		questCampaignReward, err = s.dao.FindQuestCampaignRewardById(questCampaign.Id)
-		if err != nil {
-			return
-		}
-		questCampaignRewards[questCampaign.Id] = questCampaignReward
-	}
-	return
-}
+//func (s *Service) InitQuestCampaignReward() (err error) {
+//	questCampaignRewards, err = s.dao.FindUserQuestCampaignReward()
+//	if err != nil {
+//		return
+//	}
+//	return
+//}
 
 func (s *Service) StartQuestTask() (err error) {
 	questCampaigns, err := s.dao.FindAllQuestCampaign()
@@ -57,11 +41,6 @@ func (s *Service) StartQuestTask() (err error) {
 		return
 	}
 	if len(questCampaigns) == 0 {
-		return
-	}
-	err = s.InitQuestCampaignReward(questCampaigns)
-	if err != nil {
-		log.Error("QuestTask InitQuestCampaignReward error: %v", err)
 		return
 	}
 	data, err := s.dao.FindAllActions(maxQuestActionRecordId + 1)
@@ -80,10 +59,6 @@ func (s *Service) StartQuestTask() (err error) {
 		if err != nil {
 			return
 		}
-		err = s.UpdateRank(questCampaign.Id)
-		if err != nil {
-			return
-		}
 	}
 	for {
 		err = s.dao.UpdateActionRecord(maxRecordId)
@@ -97,28 +72,13 @@ func (s *Service) StartQuestTask() (err error) {
 	return
 }
 
-func (s *Service) GetUserQuestCampaignReward(questCampaignId int, accountId int) (data *model.QuestCampaignReward) {
-	questCampaignReward := questCampaignRewards[questCampaignId]
-	if questCampaignReward == nil {
-		return
-	}
-	for _, userQuestReward := range questCampaignReward {
-		if userQuestReward.AccountId == accountId {
-			data = userQuestReward
-			break
-		}
-	}
-	return
-}
-
-func (s *Service) SetUserQuestCampaignReward(data *model.QuestCampaignReward) {
-	questCampaignReward := questCampaignRewards[data.QuestCampaignId]
-	if questCampaignReward == nil {
-		questCampaignReward = []*model.QuestCampaignReward{}
-		questCampaignRewards[data.QuestCampaignId] = questCampaignReward
-	}
-	questCampaignRewards[data.QuestCampaignId] = append(questCampaignRewards[data.QuestCampaignId], data)
-}
+//func (s *Service) GetUserQuestCampaignReward(accountId int) (data *model.QuestCampaignReward) {
+//	return questCampaignRewards[accountId]
+//}
+//
+//func (s *Service) SetUserQuestCampaignReward(data *model.QuestCampaignReward) {
+//	questCampaignRewards[data.AccountId] = data
+//}
 
 func (s *Service) QuestTask(questCampaign *model.QuestCampaign, data []*model.Action) (err error) {
 	var (
@@ -221,12 +181,12 @@ func (s *Service) QuestTask(questCampaign *model.QuestCampaign, data []*model.Ac
 			saveOrUpdateUserQuests  []*model.UserQuest
 			saveOrUpdateQuestAction []*model.UserQuestAction
 			reward                  int
-			userReward              int
-			userQuestCampaignReward int
-			completedQuest          int
-			newParticipant          bool
-			updateQuestCampaign     *model.QuestCampaign
-			questCampaignReward     *model.QuestCampaignReward
+			//userReward              int
+			//userQuestCampaignReward int
+			completedQuest      int
+			newParticipant      bool
+			updateQuestCampaign *model.QuestCampaign
+			//questCampaignReward     *model.QuestCampaignReward
 		)
 		if accountId == 0 {
 			continue
@@ -363,57 +323,32 @@ func (s *Service) QuestTask(questCampaign *model.QuestCampaign, data []*model.Ac
 			}
 		}
 		if reward > 0 {
-			userReward, err = s.dao.FindUserReward(accountId)
-			if err != nil {
-				log.Error("QuestTask s.dao.FindUserReward error: %v", err)
-				return
-			}
-			userReward += reward
+			//userReward, err = s.dao.FindUserReward(accountId)
+			//if err != nil {
+			//	log.Error("QuestTask s.dao.FindUserReward error: %v", err)
+			//	return
+			//}
+			//userReward += reward
 
-			questCampaignReward = s.GetUserQuestCampaignReward(questCampaign.Id, accountId)
-			if questCampaignReward != nil {
-				userQuestCampaignReward = questCampaignReward.Reward
-			}
-			userQuestCampaignReward += reward
+			//questCampaignReward = s.GetUserQuestCampaignReward(accountId)
+			//if questCampaignReward != nil {
+			//	userQuestCampaignReward = questCampaignReward.Reward
+			//}
+			//userQuestCampaignReward += reward
 		}
-		err = s.dao.UpdateUserQuest(accountId, questCampaign.Id, userReward, userQuestCampaignReward, updateQuestCampaign, saveOrUpdateUserQuests, saveOrUpdateQuestAction)
+		err = s.dao.UpdateUserQuest(accountId, questCampaign.Id, reward, updateQuestCampaign, saveOrUpdateUserQuests, saveOrUpdateQuestAction)
 		if err != nil {
 			log.Error("QuestTask s.dao.UpdateUserQuest error: %v", err)
 			return
 		}
-		if questCampaignReward == nil {
-			questCampaignReward = &model.QuestCampaignReward{
-				AccountId:       accountId,
-				QuestCampaignId: questCampaign.Id,
-				Reward:          userQuestCampaignReward,
-			}
-			s.SetUserQuestCampaignReward(questCampaignReward)
-		}
-	}
-	return
-}
-
-func (s *Service) UpdateRank(questCampaignId int) (err error) {
-	questCampaignReward := questCampaignRewards[questCampaignId]
-	if len(questCampaignReward) == 0 {
-		return
-	}
-	sort.Slice(questCampaignReward, func(i, j int) bool {
-		if questCampaignReward[i].Reward > questCampaignReward[j].Reward {
-			return true
-		} else if questCampaignReward[i].Reward < questCampaignReward[j].Reward {
-			return false
-		} else {
-			return questCampaignReward[i].AccountId > questCampaignReward[j].AccountId
-		}
-	})
-	err = s.dao.UpdateRewardRank(questCampaignId, questCampaignReward)
-	if err != nil {
-		log.Error("QuestTask UpdateRank s.dao.UpdateRewardRank error: %v", err)
-		return
-	}
-	for index, userQuestCampaignReward := range questCampaignReward {
-		userQuestCampaignReward.Rank = index + 1
+		s.UpdateUserReward(accountId, reward)
+		//if questCampaignReward == nil {
+		//	questCampaignReward = &model.QuestCampaignReward{
+		//		AccountId: accountId,
+		//		Reward:    userQuestCampaignReward,
+		//	}
+		//	s.SetUserQuestCampaignReward(questCampaignReward)
+		//}
 	}
 	return
 }

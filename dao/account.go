@@ -7,6 +7,14 @@ import (
 	"strconv"
 )
 
+func (d *Dao) FindAccountIds(addresses map[string]string) (data map[string]int, dataArr []int, err error) {
+	var params []string
+	for addr := range addresses {
+		params = append(params, addr)
+	}
+	return d.FindAccountId(params)
+}
+
 func (d *Dao) FindAccountId(address []string) (data map[string]int, dataArr []int, err error) {
 	var (
 		findSql = dal.FindAccountIdByAddressSql
@@ -39,6 +47,15 @@ func (d *Dao) FindAccountId(address []string) (data map[string]int, dataArr []in
 		}
 		data[addr] = accountId
 		dataArr = append(dataArr, accountId)
+	}
+	return
+}
+
+func (d *Dao) SelectForUpdate(db *sql.Tx, accountId int) (err error) {
+	var userId sql.NullInt64
+	err = db.QueryRow(dal.FindAccountForUpdateSql, accountId).Scan(&userId)
+	if err != nil {
+		return
 	}
 	return
 }

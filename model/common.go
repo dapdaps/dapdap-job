@@ -16,4 +16,7 @@ const (
 	UserQuestCompletedStatus = "completed"
 	UserQuestInProcessStatus = "in_process"
 	UserQuestExpiredStatus   = "expired"
+
+	RewardInviteType = "invite"
+	RewardQuestType  = "quest"
 )

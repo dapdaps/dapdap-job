@@ -58,6 +58,7 @@ func (s *Service) StartActionTask() (err error) {
 		minRecordId        uint64
 		maxRecordId        uint64
 		data               []*model.Action
+		invitedUserAddress = map[string]string{}
 		updateActionsDapp  = map[string]*model.ActionDapp{}
 		updateActionsChain = map[string]*model.ActionChain{}
 	)
@@ -80,6 +81,11 @@ func (s *Service) StartActionTask() (err error) {
 		var (
 			ok bool
 		)
+
+		if len(action.AccountId) > 0 {
+			invitedUserAddress[action.AccountId] = action.AccountId
+		}
+
 		if action.Id > maxDappId {
 			var (
 				dappParticipant map[string]string
@@ -124,6 +130,11 @@ func (s *Service) StartActionTask() (err error) {
 			actionChain.RecordId = action.Id
 			actionChain.Count++
 		}
+	}
+
+	err = s.UpdateInviteReward(invitedUserAddress)
+	if err != nil {
+		return
 	}
 
 	for _, updateActionDapp := range updateActionsDapp {
