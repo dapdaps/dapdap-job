@@ -43,11 +43,11 @@ func (s *Service) StartTask() {
 		}
 	}()
 
-	//go func() {
-	//	for {
-	//		log.Info("RankTask time:%d", time.Now().Unix())
-	//		s.StartRankTask()
-	//		time.Sleep(time.Second * time.Duration(conf.Conf.RankInterval))
-	//	}
-	//}()
+	go func() {
+		for {
+			log.Info("RankTask time:%d", time.Now().Unix())
+			s.StartRankTask()
+			time.Sleep(time.Second * time.Duration(conf.Conf.RankInterval))
+		}
+	}()
 }
