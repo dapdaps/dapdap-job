@@ -10,6 +10,12 @@ type QuestCampaign struct {
 	TotalQuestExecution int
 }
 
+type QuestCampaignInfo struct {
+	TotalUsers          int
+	TotalReward         int
+	TotalQuestExecution int
+}
+
 type Quest struct {
 	Id              int
 	QuestCampaignId int

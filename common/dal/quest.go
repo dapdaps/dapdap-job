@@ -2,6 +2,7 @@ package dal
 
 const (
 	FindQuestActionRecordIdSql              = `select max(record_id) from t_action_quest`
+	FindQuestCampaignInfoSql                = `select total_users,total_reward,total_quest_execution from quest_campaign_info limit 1`
 	FindQuestCampaignByStatusSql            = `select id,total_users,total_reward,total_quest_execution from quest_campaign where status=$1 order by id asc`
 	FindQuestCampaignByNotStatusSql         = `select id,start_time,end_time,status from quest_campaign where status != $1`
 	FindQuestByNotStatusSql                 = `select id,start_time,end_time,status from quest where status != $1`
@@ -20,4 +21,5 @@ const (
 	UpdateQuestCampaignStatusSql            = `update quest_campaign set status=$1 where id=$2`
 	UpdateQuestStatusSql                    = `update quest set status=$1 where id=$2`
 	UpdateUserQuestStatusSql                = `update user_quest set status=$1 where quest_id=$2`
+	UpdateQuestCampaignInfoSql              = `update quest_campaign_info set total_users=$1,total_reward=$2,total_quest_execution=$3,updated_at=$4`
 )

@@ -29,6 +29,32 @@ func (d *Dao) FindQuestActionMaxRecordId() (maxRecordIdActionQuest uint64, err e
 	return
 }
 
+func (d *Dao) FindQuestCampaignInfo() (data *model.QuestCampaignInfo, err error) {
+	var (
+		totalUsers          sql.NullInt64
+		totalReward         sql.NullInt64
+		totalQuestExecution sql.NullInt64
+	)
+	data = &model.QuestCampaignInfo{}
+	err = d.db.QueryRow(dal.FindQuestCampaignInfoSql).Scan(&totalUsers, &totalReward, &totalQuestExecution)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return
+	}
+	if totalUsers.Valid {
+		data.TotalUsers = int(totalUsers.Int64)
+	}
+	if totalReward.Valid {
+		data.TotalReward = int(totalReward.Int64)
+	}
+	if totalQuestExecution.Valid {
+		data.TotalQuestExecution = int(totalQuestExecution.Int64)
+	}
+	return
+}
+
 func (d *Dao) FindAllQuestCampaign() (data []*model.QuestCampaign, err error) {
 	rows, err := d.db.Query(dal.FindQuestCampaignByStatusSql, model.QuestCampaignOnGoingStatus)
 	if err != nil {
@@ -266,7 +292,7 @@ func (d *Dao) UpdateActionRecord(id uint64) (err error) {
 //	return
 //}
 
-func (d *Dao) UpdateUserQuest(accountId int, questCampaignId int, reward int, questCampaign *model.QuestCampaign, userQuests []*model.UserQuest, userQuestActions []*model.UserQuestAction) (err error) {
+func (d *Dao) UpdateUserQuest(accountId int, questCampaignId int, reward int, campaignInfo *model.QuestCampaignInfo, userQuests []*model.UserQuest, userQuestActions []*model.UserQuestAction) (err error) {
 	timestamp := time.Now()
 	err = d.WithTrx(func(db *sql.Tx) (err error) {
 		for _, userQuest := range userQuests {
@@ -281,12 +307,18 @@ func (d *Dao) UpdateUserQuest(accountId int, questCampaignId int, reward int, qu
 				return
 			}
 		}
-		if questCampaign != nil {
-			_, err = db.Exec(dal.UpdateQuestCampaignSql, questCampaign.TotalUsers, 0, questCampaign.TotalQuestExecution, timestamp, questCampaignId)
+		if campaignInfo != nil {
+			_, err = db.Exec(dal.UpdateQuestCampaignInfoSql, campaignInfo.TotalUsers, campaignInfo.TotalReward, campaignInfo.TotalQuestExecution, timestamp)
 			if err != nil {
 				return
 			}
 		}
+		//if questCampaign != nil {
+		//	_, err = db.Exec(dal.UpdateQuestCampaignSql, questCampaign.TotalUsers, 0, questCampaign.TotalQuestExecution, timestamp, questCampaignId)
+		//	if err != nil {
+		//		return
+		//	}
+		//}
 		if reward > 0 {
 			err = d.SelectForUpdate(db, accountId)
 			if err != nil {

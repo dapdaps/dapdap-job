@@ -9,15 +9,21 @@ import (
 
 var (
 	maxQuestActionRecordId uint64
+	campaignInfo           *model.QuestCampaignInfo
 	//questCampaignRewards   = map[int]*model.QuestCampaignReward{}
 )
 
 func (s *Service) InitQuest() (err error) {
 	maxQuestActionRecordId, err = s.dao.FindQuestActionMaxRecordId()
 	if err != nil {
+		log.Error("InitQuest s.dao.FindQuestActionMaxRecordId error: %v", err)
 		return
 	}
-	log.Info("InitQuest maxQuestActionRecordId: %d", maxQuestActionRecordId)
+	campaignInfo, err = s.dao.FindQuestCampaignInfo()
+	if err != nil {
+		log.Error("InitQuest s.dao.FindQuestCampaignInfo error: %v", err)
+		return
+	}
 	//err = s.InitQuestCampaignReward()
 	//if err != nil {
 	//	log.Error("InitQuest InitQuestCampaignReward error: %v", err)
@@ -32,6 +38,14 @@ func (s *Service) InitQuest() (err error) {
 //		return
 //	}
 //	return
+//}
+
+//func (s *Service) GetUserQuestCampaignReward(accountId int) (data *model.QuestCampaignReward) {
+//	return questCampaignRewards[accountId]
+//}
+//
+//func (s *Service) SetUserQuestCampaignReward(data *model.QuestCampaignReward) {
+//	questCampaignRewards[data.AccountId] = data
 //}
 
 func (s *Service) StartQuestTask() (err error) {
@@ -71,14 +85,6 @@ func (s *Service) StartQuestTask() (err error) {
 	maxQuestActionRecordId = maxRecordId
 	return
 }
-
-//func (s *Service) GetUserQuestCampaignReward(accountId int) (data *model.QuestCampaignReward) {
-//	return questCampaignRewards[accountId]
-//}
-//
-//func (s *Service) SetUserQuestCampaignReward(data *model.QuestCampaignReward) {
-//	questCampaignRewards[data.AccountId] = data
-//}
 
 func (s *Service) QuestTask(questCampaign *model.QuestCampaign, data []*model.Action) (err error) {
 	var (
@@ -181,11 +187,12 @@ func (s *Service) QuestTask(questCampaign *model.QuestCampaign, data []*model.Ac
 			saveOrUpdateUserQuests  []*model.UserQuest
 			saveOrUpdateQuestAction []*model.UserQuestAction
 			reward                  int
+			completedQuest          int
+			newParticipant          bool
+			updateCampaignInfo      *model.QuestCampaignInfo
 			//userReward              int
 			//userQuestCampaignReward int
-			completedQuest      int
-			newParticipant      bool
-			updateQuestCampaign *model.QuestCampaign
+			//updateQuestCampaign *model.QuestCampaign
 			//questCampaignReward     *model.QuestCampaignReward
 		)
 		if accountId == 0 {
@@ -315,11 +322,17 @@ func (s *Service) QuestTask(questCampaign *model.QuestCampaign, data []*model.Ac
 			}
 		}
 		if newParticipant || completedQuest > 0 || reward > 0 {
-			updateQuestCampaign = questCampaign
-			updateQuestCampaign.TotalQuestExecution += completedQuest
-			updateQuestCampaign.TotalReward += reward
+			//updateQuestCampaign = questCampaign
+			//updateQuestCampaign.TotalQuestExecution += completedQuest
+			//updateQuestCampaign.TotalReward += reward
+			//if newParticipant {
+			//	updateQuestCampaign.TotalUsers += 1
+			//}
+			updateCampaignInfo = &model.QuestCampaignInfo{}
+			updateCampaignInfo.TotalQuestExecution = campaignInfo.TotalQuestExecution + completedQuest
+			updateCampaignInfo.TotalReward = campaignInfo.TotalReward + reward
 			if newParticipant {
-				updateQuestCampaign.TotalUsers += 1
+				updateCampaignInfo.TotalUsers = campaignInfo.TotalUsers + 1
 			}
 		}
 		if reward > 0 {
@@ -336,10 +349,15 @@ func (s *Service) QuestTask(questCampaign *model.QuestCampaign, data []*model.Ac
 			//}
 			//userQuestCampaignReward += reward
 		}
-		err = s.dao.UpdateUserQuest(accountId, questCampaign.Id, reward, updateQuestCampaign, saveOrUpdateUserQuests, saveOrUpdateQuestAction)
+		err = s.dao.UpdateUserQuest(accountId, questCampaign.Id, reward, updateCampaignInfo, saveOrUpdateUserQuests, saveOrUpdateQuestAction)
 		if err != nil {
 			log.Error("QuestTask s.dao.UpdateUserQuest error: %v", err)
 			return
+		}
+		if updateCampaignInfo != nil {
+			campaignInfo.TotalUsers = updateCampaignInfo.TotalUsers
+			campaignInfo.TotalReward = updateCampaignInfo.TotalReward
+			campaignInfo.TotalQuestExecution = updateCampaignInfo.TotalQuestExecution
 		}
 		s.UpdateUserReward(accountId, reward)
 		//if questCampaignReward == nil {
