@@ -15,9 +15,15 @@ var (
 	DapdapService *Service
 )
 
-func Init(c *conf.Config) {
+func Init(c *conf.Config) (err error) {
 	DapdapService = &Service{
 		Timeout: time.Duration(c.Timeout),
 		dao:     dao.New(c),
 	}
+
+	err = DapdapService.dao.InitQuestCampaignInfo()
+	if err != nil {
+		return
+	}
+	return
 }

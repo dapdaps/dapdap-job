@@ -21,7 +21,10 @@ func main() {
 	log.Init(conf.Conf.Log, conf.Conf.Debug)
 	log.Info("dapdap-job service start")
 
-	service.Init(conf.Conf)
+	err := service.Init(conf.Conf)
+	if err != nil {
+		panic(err)
+	}
 	log.Info("dapdap-job service init")
 
 	go func() {

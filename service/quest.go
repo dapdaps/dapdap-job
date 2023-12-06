@@ -359,7 +359,7 @@ func (s *Service) QuestTask(questCampaign *model.QuestCampaign, data []*model.Ac
 			campaignInfo.TotalReward = updateCampaignInfo.TotalReward
 			campaignInfo.TotalQuestExecution = updateCampaignInfo.TotalQuestExecution
 		}
-		s.UpdateUserReward(accountId, reward)
+		//s.UpdateUserReward(accountId, reward)
 		//if questCampaignReward == nil {
 		//	questCampaignReward = &model.QuestCampaignReward{
 		//		AccountId: accountId,

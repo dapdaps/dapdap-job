@@ -5,11 +5,24 @@ import (
 	"dapdap-job/model"
 	"database/sql"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
 )
+
+func (d *Dao) InitQuestCampaignInfo() (err error) {
+	var count sql.NullInt64
+	err = d.db.QueryRow(dal.FindCountQuestCampaignInfoSql).Scan(&count)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return
+	}
+	err = nil
+	if count.Valid && count.Int64 > 0 {
+		return
+	}
+	_, err = d.db.Exec(dal.InitQuestCampaignInfoSql)
+	return
+}
 
 func (d *Dao) FindQuestActionMaxRecordId() (maxRecordIdActionQuest uint64, err error) {
 	var (
@@ -68,7 +81,7 @@ func (d *Dao) FindAllQuestCampaign() (data []*model.QuestCampaign, err error) {
 		var (
 			questCampaign = &model.QuestCampaign{}
 		)
-		if err = rows.Scan(&questCampaign.Id, &questCampaign.TotalUsers, &questCampaign.TotalReward, &questCampaign.TotalQuestExecution); err != nil {
+		if err = rows.Scan(&questCampaign.Id); err != nil {
 			return
 		}
 		data = append(data, questCampaign)
@@ -253,45 +266,6 @@ func (d *Dao) UpdateActionRecord(id uint64) (err error) {
 	return
 }
 
-//func (d *Dao) FindQuestCampaignReward(accountId int, questCampaignId int) (reward int, err error) {
-//	var (
-//		rewardSql sql.NullInt64
-//	)
-//	err = d.db.QueryRow(dal.FindQuestCampaignRewardByAccountIdSql, accountId, questCampaignId).Scan(&rewardSql)
-//	if err != nil {
-//		if errors.Is(err, sql.ErrNoRows) {
-//			err = nil
-//		}
-//		return
-//	}
-//	if rewardSql.Valid {
-//		reward = int(rewardSql.Int64)
-//	}
-//	return
-//}
-
-//func (d *Dao) FindUserQuestCampaignReward() (data map[int]*model.QuestCampaignReward, err error) {
-//	data = map[int]*model.QuestCampaignReward{}
-//	rows, err := d.db.Query(dal.FindUserRewardByCategorySql, model.RewardQuestType)
-//	if err != nil {
-//		if errors.Is(err, sql.ErrNoRows) {
-//			err = nil
-//		}
-//		return
-//	}
-//	defer func() { _ = rows.Close() }()
-//	for rows.Next() {
-//		var (
-//			questCampaignReward = &model.QuestCampaignReward{}
-//		)
-//		if err = rows.Scan(&questCampaignReward.Id, &questCampaignReward.AccountId, &questCampaignReward.Reward); err != nil {
-//			return
-//		}
-//		data[questCampaignReward.AccountId] = questCampaignReward
-//	}
-//	return
-//}
-
 func (d *Dao) UpdateUserQuest(accountId int, questCampaignId int, reward int, campaignInfo *model.QuestCampaignInfo, userQuests []*model.UserQuest, userQuestActions []*model.UserQuestAction) (err error) {
 	timestamp := time.Now()
 	err = d.WithTrx(func(db *sql.Tx) (err error) {
@@ -308,7 +282,7 @@ func (d *Dao) UpdateUserQuest(accountId int, questCampaignId int, reward int, ca
 			}
 		}
 		if campaignInfo != nil {
-			_, err = db.Exec(dal.UpdateQuestCampaignInfoSql, campaignInfo.TotalUsers, campaignInfo.TotalReward, campaignInfo.TotalQuestExecution, timestamp)
+			_, err = db.Exec(dal.UpdateQuestCampaignInfoSql, campaignInfo.TotalUsers, campaignInfo.TotalQuestExecution, timestamp)
 			if err != nil {
 				return
 			}
@@ -336,6 +310,12 @@ func (d *Dao) UpdateUserQuest(accountId int, questCampaignId int, reward int, ca
 		}
 		return
 	})
+	return
+}
+
+func (d *Dao) UpdateTotalReward(reward int) (err error) {
+	timestamp := time.Now()
+	_, err = d.db.Exec(dal.UpdateTotalRewardSql, reward, timestamp)
 	return
 }
 
@@ -402,52 +382,38 @@ func (d *Dao) UpdateUserQuestStatus(questId int, status string) (err error) {
 	return
 }
 
-//func (d *Dao) UpdateRewardRank(questCampaignId int, data []*model.QuestCampaignReward) (err error) {
-//	var (
-//		total     = len(data)
-//		updateSql string
-//		sqlSize   int
-//	)
-//	if total == 0 {
-//		return
-//	}
-//	for index, questCampaignReward := range data {
-//		if questCampaignReward.Rank != index+1 {
-//			updateSql += fmt.Sprintf(`update quest_campaign_reward set rank=%d where quest_campaign_id=%d and account_id=%d;`, index+1, questCampaignId, questCampaignReward.AccountId)
-//		}
-//		if len(updateSql) > 0 && (sqlSize == 50 || index == total-1) {
-//			_, err = d.db.Exec(updateSql)
-//			if err != nil {
-//				return
-//			}
-//			updateSql = ""
-//			sqlSize = 0
-//		}
-//	}
-//	return
-//}
-
 func (d *Dao) UpdateUserRewardRank(data []*model.UserReward) (err error) {
 	var (
 		total     = len(data)
-		updateSql string
-		sqlSize   int
+		timestamp = time.Now()
+		limit     = 50
+		from      = 0
+		end       = from + limit
 	)
 	if total == 0 {
 		return
 	}
-	for index, userReward := range data {
-		if userReward.Rank != index+1 {
-			updateSql += fmt.Sprintf(`insert into user_reward_rank(account_id,reward,rank) VALUES(%d,%d,%d) ON CONFLICT (account_id) DO UPDATE SET reward=EXCLUDED.reward,rank=EXCLUDED.rank;`, userReward.AccountId, userReward.Reward, index+1)
+
+	for {
+		if from >= total {
+			return
 		}
-		if len(updateSql) > 0 && (sqlSize == 50 || index == total-1) {
-			_, err = d.db.Exec(updateSql)
-			if err != nil {
-				return
+		if end >= total {
+			end = total
+		}
+		err = d.WithTrx(func(db *sql.Tx) (err error) {
+			for index := from; index < end; index++ {
+				_, err = db.Exec(dal.UpdateUserRewardRankSql, data[index].AccountId, data[index].Reward, index+1, timestamp)
+				if err != nil {
+					return
+				}
 			}
-			updateSql = ""
-			sqlSize = 0
+			return
+		})
+		if err != nil {
+			return
 		}
+		from = end
+		end = from + limit
 	}
-	return
 }
