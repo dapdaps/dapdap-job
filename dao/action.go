@@ -17,14 +17,13 @@ func (d *Dao) ActionRows(rows *sql.Rows) (action *model.Action, err error) {
 		actionTokens    sql.NullString
 		template        sql.NullString
 		actionNetworkId sql.NullString
-		dappId          sql.NullInt64
-		networkId       sql.NullInt64
-		dappCategoryId  sql.NullInt64
-		toNetworkId     sql.NullInt64
 		source          sql.NullString
+		dappId          sql.NullInt64
+		chainId         sql.NullInt64
+		toChainId       sql.NullInt64
 	)
 	action = &model.Action{}
-	if err = rows.Scan(&action.Id, &accountId, &actionTitle, &actionType, &actionTokens, &amount, &template, &actionNetworkId, &dappId, &networkId, &dappCategoryId, &toNetworkId, &source); err != nil {
+	if err = rows.Scan(&action.Id, &accountId, &actionTitle, &actionType, &actionTokens, &amount, &template, &actionNetworkId, &dappId, &chainId, &toChainId, &source); err != nil {
 		return
 	}
 	if accountId.Valid {
@@ -51,14 +50,11 @@ func (d *Dao) ActionRows(rows *sql.Rows) (action *model.Action, err error) {
 	if dappId.Valid {
 		action.DappId = int(dappId.Int64)
 	}
-	if networkId.Valid {
-		action.NetworkId = int(networkId.Int64)
+	if chainId.Valid {
+		action.ChainId = int(chainId.Int64)
 	}
-	if dappCategoryId.Valid {
-		action.DappCategoryId = int(dappCategoryId.Int64)
-	}
-	if toNetworkId.Valid {
-		action.ToNetworkId = int(toNetworkId.Int64)
+	if toChainId.Valid {
+		action.ToCahinId = int(toChainId.Int64)
 	}
 	if source.Valid {
 		action.Source = source.String

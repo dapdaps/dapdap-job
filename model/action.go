@@ -9,11 +9,10 @@ type Action struct {
 	ActionAmount    string
 	Template        string
 	ActionNetworkId string
-	DappId          int
-	DappCategoryId  int
-	NetworkId       int
-	ToNetworkId     int
 	Source          string
+	DappId          int
+	ChainId         int
+	ToCahinId       int
 }
 
 type ActionDapp struct {

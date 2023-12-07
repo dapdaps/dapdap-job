@@ -10,7 +10,8 @@ import (
 var (
 	maxQuestActionRecordId uint64
 	campaignInfo           *model.QuestCampaignInfo
-	//questCampaignRewards   = map[int]*model.QuestCampaignReward{}
+	categories             map[string]int //map[name]id
+	networks               map[int]int    //map[chain_id]id
 )
 
 func (s *Service) InitQuest() (err error) {
@@ -32,22 +33,6 @@ func (s *Service) InitQuest() (err error) {
 	return
 }
 
-//func (s *Service) InitQuestCampaignReward() (err error) {
-//	questCampaignRewards, err = s.dao.FindUserQuestCampaignReward()
-//	if err != nil {
-//		return
-//	}
-//	return
-//}
-
-//func (s *Service) GetUserQuestCampaignReward(accountId int) (data *model.QuestCampaignReward) {
-//	return questCampaignRewards[accountId]
-//}
-//
-//func (s *Service) SetUserQuestCampaignReward(data *model.QuestCampaignReward) {
-//	questCampaignRewards[data.AccountId] = data
-//}
-
 func (s *Service) StartQuestTask() (err error) {
 	questCampaigns, err := s.dao.FindAllQuestCampaign()
 	if err != nil {
@@ -66,6 +51,17 @@ func (s *Service) StartQuestTask() (err error) {
 		return
 	}
 	maxRecordId := data[len(data)-1].Id
+
+	categories, err = s.dao.FindActionCategory()
+	if err != nil {
+		log.Error("QuestTask s.dao.FindActionCategory error: %v", err)
+		return
+	}
+	networks, err = s.dao.FindNetworks()
+	if err != nil {
+		log.Error("QuestTask s.dao.FindNetworks error: %v", err)
+		return
+	}
 
 	for _, questCampaign := range questCampaigns {
 		log.Info("QuestTask record %d - %d", maxQuestActionRecordId+1, maxRecordId)
@@ -122,7 +118,7 @@ func (s *Service) QuestTask(questCampaign *model.QuestCampaign, data []*model.Ac
 	for _, action := range data {
 		for _, questAction := range allQuestAction {
 			var ok bool
-			if questAction.CategoryId != action.DappCategoryId {
+			if questAction.CategoryId != categories[action.ActionType] {
 				continue
 			}
 			if len(questAction.Source) > 0 && !strings.EqualFold(questAction.Source, action.Source) {
@@ -131,11 +127,11 @@ func (s *Service) QuestTask(questCampaign *model.QuestCampaign, data []*model.Ac
 			if _, ok = questAction.DappsMap[action.DappId]; !ok {
 				continue
 			}
-			if _, ok = questAction.NetworksMap[action.NetworkId]; !ok {
+			if _, ok = questAction.NetworksMap[networks[action.ChainId]]; !ok {
 				continue
 			}
 			if len(questAction.ToNetworksMap) > 0 {
-				if _, ok = questAction.ToNetworksMap[action.ToNetworkId]; !ok {
+				if _, ok = questAction.ToNetworksMap[networks[action.ToCahinId]]; !ok {
 					continue
 				}
 			}

@@ -118,13 +118,14 @@ func (s *Service) StartActionTask() (err error) {
 		if action.Id > maxChainId {
 			var (
 				actionChain *model.ActionChain
-				chainKey    = fmt.Sprintf("%d_%d_%s", action.NetworkId, action.DappId, action.ActionTitle)
+				networkId   = networks[action.ChainId]
+				chainKey    = fmt.Sprintf("%d_%d_%s", networkId, action.DappId, action.ActionTitle)
 			)
-			if action.NetworkId > 0 && action.DappId > 0 && len(action.ActionTitle) > 0 {
+			if networkId > 0 && action.DappId > 0 && len(action.ActionTitle) > 0 {
 				actionChain, ok = updateActionsChain[chainKey]
 				if !ok {
 					actionChain = &model.ActionChain{
-						NetworkId:   action.NetworkId,
+						NetworkId:   networkId,
 						DappId:      action.DappId,
 						ActionTitle: action.ActionTitle,
 					}
