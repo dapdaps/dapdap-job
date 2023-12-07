@@ -17,6 +17,9 @@ func (d *Dao) FindInvites(inviteAddress map[string]int) (data map[string]*model.
 		args    []interface{}
 	)
 	data = map[string]*model.Invite{}
+	if len(inviteAddress) == 0 {
+		return
+	}
 	for _, accountId := range inviteAddress {
 		index++
 		findSql += `$` + strconv.Itoa(index) + `,`
