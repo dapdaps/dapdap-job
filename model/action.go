@@ -22,14 +22,14 @@ type ActionDapp struct {
 	Count        uint64
 	Participants uint64
 	ActionType   string
-	Template     string
+	DappId       int
 }
 
 type ActionChain struct {
-	Id              uint64
-	RecordId        uint64
-	Count           uint64
-	ActionTitle     string
-	Template        string
-	ActionNetworkId string
+	Id          uint64
+	RecordId    uint64
+	Count       uint64
+	NetworkId   int
+	DappId      int
+	ActionTitle string
 }

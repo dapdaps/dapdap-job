@@ -4,14 +4,13 @@ import (
 	"dapdap-job/common/log"
 	"dapdap-job/model"
 	"fmt"
-	"strings"
 )
 
 var (
 	maxDappId        uint64
 	maxChainId       uint64
-	dappParticipants = map[string]map[string]string{}
-	actionsDapp      map[string]*model.ActionDapp
+	dappParticipants = map[int]map[string]string{}
+	actionsDapp      map[int]*model.ActionDapp
 	actionsChain     map[string]*model.ActionChain
 )
 
@@ -21,7 +20,7 @@ func (s *Service) InitAction() (err error) {
 		return
 	}
 	log.Info("InitAction maxDappId:%d  maxChainId:%d", maxDappId, maxChainId)
-	data, err := s.dao.FindAllActions(1)
+	data, err := s.dao.FindRangeActions(1, maxDappId)
 	if err != nil {
 		log.Error("InitAction s.dao.FindActions error: %v", err)
 		return
@@ -31,12 +30,12 @@ func (s *Service) InitAction() (err error) {
 			dappParticipant map[string]string
 			ok              bool
 		)
-		dappParticipant, ok = dappParticipants[action.Template]
+		dappParticipant, ok = dappParticipants[action.DappId]
 		if !ok {
 			dappParticipant = map[string]string{}
-			dappParticipants[action.Template] = dappParticipant
+			dappParticipants[action.DappId] = dappParticipant
 		}
-		dappParticipant[strings.ToLower(action.AccountId)] = ""
+		dappParticipant[action.AccountId] = ""
 	}
 
 	actionsDapp, err = s.dao.FindActionsDapp()
@@ -59,7 +58,7 @@ func (s *Service) StartActionTask() (err error) {
 		maxRecordId        uint64
 		data               []*model.Action
 		invitedUserAddress = map[string]string{}
-		updateActionsDapp  = map[string]*model.ActionDapp{}
+		updateActionsDapp  = map[int]*model.ActionDapp{}
 		updateActionsChain = map[string]*model.ActionChain{}
 	)
 	if maxDappId < maxChainId {
@@ -91,44 +90,49 @@ func (s *Service) StartActionTask() (err error) {
 				dappParticipant map[string]string
 				actionDapp      *model.ActionDapp
 			)
-			actionDapp, ok = updateActionsDapp[action.Template]
-			if !ok {
-				actionDapp = &model.ActionDapp{
-					Template: action.Template,
+			if action.DappId > 0 {
+				if actionDapp, ok = updateActionsDapp[action.DappId]; !ok {
+					actionDapp = &model.ActionDapp{
+						DappId: action.DappId,
+					}
+					updateActionsDapp[action.DappId] = actionDapp
 				}
-				updateActionsDapp[action.Template] = actionDapp
-			}
-			actionDapp.RecordId = action.Id
-			actionDapp.Count++
+				actionDapp.RecordId = action.Id
+				actionDapp.Count++
 
-			dappParticipant, ok = dappParticipants[action.Template]
-			if !ok {
-				dappParticipant = map[string]string{}
-				dappParticipants[action.Template] = dappParticipant
-			}
-			_, ok = dappParticipant[strings.ToLower(action.AccountId)]
-			if !ok {
-				actionDapp.Participants++
-				dappParticipant[strings.ToLower(action.AccountId)] = ""
+				if len(action.AccountId) > 0 {
+					dappParticipant, ok = dappParticipants[action.DappId]
+					if !ok {
+						dappParticipant = map[string]string{}
+						dappParticipants[action.DappId] = dappParticipant
+					}
+					_, ok = dappParticipant[action.AccountId]
+					if !ok {
+						actionDapp.Participants++
+						dappParticipant[action.AccountId] = ""
+					}
+				}
 			}
 		}
 
 		if action.Id > maxChainId {
 			var (
 				actionChain *model.ActionChain
-				chainKey    = fmt.Sprintf("%s_%s_%s", action.ActionNetworkId, action.Template, action.ActionTitle)
+				chainKey    = fmt.Sprintf("%d_%d_%s", action.NetworkId, action.DappId, action.ActionTitle)
 			)
-			actionChain, ok = updateActionsChain[chainKey]
-			if !ok {
-				actionChain = &model.ActionChain{
-					ActionNetworkId: action.ActionNetworkId,
-					Template:        action.Template,
-					ActionTitle:     action.ActionTitle,
+			if action.NetworkId > 0 && action.DappId > 0 && len(action.ActionTitle) > 0 {
+				actionChain, ok = updateActionsChain[chainKey]
+				if !ok {
+					actionChain = &model.ActionChain{
+						NetworkId:   action.NetworkId,
+						DappId:      action.DappId,
+						ActionTitle: action.ActionTitle,
+					}
+					updateActionsChain[chainKey] = actionChain
 				}
-				updateActionsChain[chainKey] = actionChain
+				actionChain.RecordId = action.Id
+				actionChain.Count++
 			}
-			actionChain.RecordId = action.Id
-			actionChain.Count++
 		}
 	}
 
@@ -138,14 +142,14 @@ func (s *Service) StartActionTask() (err error) {
 	}
 
 	for _, updateActionDapp := range updateActionsDapp {
-		if actionDapp, ok := actionsDapp[updateActionDapp.Template]; ok {
+		if actionDapp, ok := actionsDapp[updateActionDapp.DappId]; ok {
 			updateActionDapp.Count += actionDapp.Count
 			updateActionDapp.Participants += actionDapp.Participants
 		}
 	}
 
 	for _, updateActionChain := range updateActionsChain {
-		var chainKey = fmt.Sprintf("%s_%s_%s", updateActionChain.ActionNetworkId, updateActionChain.Template, updateActionChain.ActionTitle)
+		var chainKey = fmt.Sprintf("%d_%d_%s", updateActionChain.NetworkId, updateActionChain.DappId, updateActionChain.ActionTitle)
 		if actionChain, ok := actionsChain[chainKey]; ok {
 			updateActionChain.Count += actionChain.Count
 		}
