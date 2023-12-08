@@ -10,6 +10,20 @@ import (
 	"time"
 )
 
+func (d *Dao) InitQuestActionRecord() (err error) {
+	var countSql sql.NullInt64
+	err = d.db.QueryRow(dal.FindQuestRecordCountSql).Scan(&countSql)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return
+	}
+	err = nil
+	if countSql.Valid && countSql.Int64 > 0 {
+		return
+	}
+	_, err = d.db.Exec(dal.InitQuestRecordSql, 0, 0)
+	return
+}
+
 func (d *Dao) InitQuestCampaignInfo() (err error) {
 	var count sql.NullInt64
 	err = d.db.QueryRow(dal.FindCountQuestCampaignInfoSql).Scan(&count)
@@ -24,20 +38,19 @@ func (d *Dao) InitQuestCampaignInfo() (err error) {
 	return
 }
 
-func (d *Dao) FindQuestActionMaxRecordId() (maxRecordIdActionQuest uint64, err error) {
+func (d *Dao) FindQuestActionMaxRecordId() (maxActionRecordId uint64, err error) {
 	var (
-		maxRecordIdActionQuestSql sql.NullInt64
+		maxActionRecordIdSql sql.NullInt64
 	)
-	err = d.db.QueryRow(dal.FindQuestActionRecordIdSql).Scan(&maxRecordIdActionQuestSql)
+	err = d.db.QueryRow(dal.FindMaxQuestRecordIdSql).Scan(&maxActionRecordIdSql)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = nil
-		} else {
-			return
 		}
+		return
 	}
-	if maxRecordIdActionQuestSql.Valid {
-		maxRecordIdActionQuest = uint64(maxRecordIdActionQuestSql.Int64)
+	if maxActionRecordIdSql.Valid {
+		maxActionRecordId = uint64(maxActionRecordIdSql.Int64)
 	}
 	return
 }
@@ -90,8 +103,18 @@ func (d *Dao) FindAllQuestCampaign() (data []*model.QuestCampaign, err error) {
 }
 
 func (d *Dao) FindAllQuest(questCampaignId int) (data map[int]*model.Quest, err error) {
+	var (
+		findSql = dal.FindAllQuestByStatusIdSql
+		rows    *sql.Rows
+	)
 	data = map[int]*model.Quest{}
-	rows, err := d.db.Query(dal.FindAllQuestByStatusIdSql, questCampaignId, model.QuestOnGoingStatus)
+	if questCampaignId > 0 {
+		findSql += ` and quest_campaign_id=$2 order by id asc`
+		rows, err = d.db.Query(findSql, model.QuestOnGoingStatus, questCampaignId)
+	} else {
+		findSql += ` order by id asc`
+		rows, err = d.db.Query(findSql, model.QuestOnGoingStatus)
+	}
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = nil
@@ -115,9 +138,9 @@ func (d *Dao) FindAllQuest(questCampaignId int) (data map[int]*model.Quest, err 
 	return
 }
 
-func (d *Dao) FindAllQuestAction(questCampaignId int) (data map[int]*model.QuestAction, err error) {
+func (d *Dao) FindAllQuestAction() (data map[int]*model.QuestAction, err error) {
 	data = map[int]*model.QuestAction{}
-	rows, err := d.db.Query(dal.FindAllQuestActionByCategoryIdSql, questCampaignId, "dapp")
+	rows, err := d.db.Query(dal.FindAllQuestActionSql)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = nil
@@ -128,13 +151,21 @@ func (d *Dao) FindAllQuestAction(questCampaignId int) (data map[int]*model.Quest
 	for rows.Next() {
 		var (
 			questAction = &model.QuestAction{}
+			category    sql.NullString
+			categoryId  sql.NullInt64
 			source      sql.NullString
 			dapps       sql.NullString
 			networks    sql.NullString
 			toNetworks  sql.NullString
 		)
-		if err = rows.Scan(&questAction.Id, &questAction.QuestCampaignId, &questAction.QuestId, &questAction.Times, &questAction.CategoryId, &source, &dapps, &networks, &toNetworks); err != nil {
+		if err = rows.Scan(&questAction.Id, &questAction.QuestCampaignId, &questAction.QuestId, &questAction.Times, &category, &categoryId, &source, &dapps, &networks, &toNetworks); err != nil {
 			return
+		}
+		if category.Valid {
+			questAction.Category = category.String
+		}
+		if categoryId.Valid {
+			questAction.CategoryId = int(categoryId.Int64)
 		}
 		questAction.DappsMap = map[int]int{}
 		if dapps.Valid {
@@ -188,8 +219,13 @@ func (d *Dao) FindUserQuest(questCampaignId int, accountIds []int) (data map[int
 		findSql += `$` + strconv.Itoa(index+1) + `,`
 		args = append(args, accountId)
 	}
-	args = append(args, questCampaignId)
-	findSql = findSql[0:len(findSql)-1] + `) and quest_campaign_id=$` + strconv.Itoa(len(args))
+	findSql = findSql[0:len(findSql)-1] + `)`
+
+	if questCampaignId > 0 {
+		args = append(args, questCampaignId)
+		findSql += ` and quest_campaign_id=$` + strconv.Itoa(len(args))
+	}
+
 	rows, err := d.db.Query(findSql, args...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -228,8 +264,12 @@ func (d *Dao) FindUserQuestAction(questCampaignId int, accountIds []int) (data m
 		findSql += `$` + strconv.Itoa(index+1) + `,`
 		args = append(args, accountId)
 	}
-	args = append(args, questCampaignId)
-	findSql = findSql[0:len(findSql)-1] + `) and quest_campaign_id=$` + strconv.Itoa(len(args))
+	findSql = findSql[0:len(findSql)-1] + `)`
+
+	if questCampaignId > 0 {
+		args = append(args, questCampaignId)
+		findSql += ` and quest_campaign_id=$` + strconv.Itoa(len(args))
+	}
 	rows, err := d.db.Query(findSql, args...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -254,19 +294,11 @@ func (d *Dao) FindUserQuestAction(questCampaignId int, accountIds []int) (data m
 }
 
 func (d *Dao) UpdateActionRecord(id uint64) (err error) {
-	lastId, err := d.FindQuestActionMaxRecordId()
-	if err != nil {
-		return
-	}
-	if lastId == 0 {
-		_, err = d.db.Exec(dal.SaveQuestActionRecordIdSql, id)
-	} else {
-		_, err = d.db.Exec(dal.UpdateQuestActionRecordIdSql, id)
-	}
+	_, err = d.db.Exec(dal.UpdateQuestActionRecordIdSql, id)
 	return
 }
 
-func (d *Dao) UpdateUserQuest(accountId int, questCampaignId int, reward int, campaignInfo *model.QuestCampaignInfo, userQuests []*model.UserQuest, userQuestActions []*model.UserQuestAction) (err error) {
+func (d *Dao) UpdateUserQuest(accountId int, reward int, userQuests []*model.UserQuest, userQuestActions []*model.UserQuestAction) (err error) {
 	timestamp := time.Now()
 	err = d.WithTrx(func(db *sql.Tx) (err error) {
 		for _, userQuest := range userQuests {
@@ -281,18 +313,6 @@ func (d *Dao) UpdateUserQuest(accountId int, questCampaignId int, reward int, ca
 				return
 			}
 		}
-		if campaignInfo != nil {
-			_, err = db.Exec(dal.UpdateQuestCampaignInfoSql, campaignInfo.TotalUsers, campaignInfo.TotalQuestExecution, timestamp)
-			if err != nil {
-				return
-			}
-		}
-		//if questCampaign != nil {
-		//	_, err = db.Exec(dal.UpdateQuestCampaignSql, questCampaign.TotalUsers, 0, questCampaign.TotalQuestExecution, timestamp, questCampaignId)
-		//	if err != nil {
-		//		return
-		//	}
-		//}
 		if reward > 0 {
 			err = d.SelectForUpdate(db, accountId)
 			if err != nil {
@@ -416,4 +436,95 @@ func (d *Dao) UpdateUserRewardRank(data []*model.UserReward) (err error) {
 		from = end
 		end = from + limit
 	}
+}
+
+func (d *Dao) FindQuestSourceRecordMaxId() (id uint64, err error) {
+	var (
+		maxRecordIdSql sql.NullInt64
+	)
+	err = d.db.QueryRow(dal.FindQuestSourceRecordMaxIdSql).Scan(&maxRecordIdSql)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return
+	}
+	if maxRecordIdSql.Valid {
+		id = uint64(maxRecordIdSql.Int64)
+	}
+	return
+}
+
+func (d *Dao) FindAllSourceRecords(id uint64) (data []*model.QuestSourceRecord, err error) {
+	var (
+		maxId uint64
+		rows  *sql.Rows
+		limit = uint64(5000)
+	)
+	maxId, err = d.FindQuestSourceRecordMaxId()
+	if err != nil {
+		return
+	}
+	if maxId < id {
+		return
+	}
+	for {
+		rows, err = d.db.Query(dal.FindQuestSourceRecordByBetweenSql, id, id+limit)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return
+		}
+		err = nil
+		for rows.Next() {
+			var record = &model.QuestSourceRecord{}
+			if err = rows.Scan(&record.Id, &record.Source, &record.AccountId, &record.QuestActionId, &record.QuestId, &record.QuestCampaignId); err != nil {
+				return
+			}
+			data = append(data, record)
+		}
+		_ = rows.Close()
+		if len(data) > 0 && data[len(data)-1].Id >= maxId {
+			return
+		}
+		id = id + limit + 1
+	}
+}
+
+func (d *Dao) FindQuestTotalUsers() (totalUsers int64, err error) {
+	var (
+		totalUsersSql sql.NullInt64
+	)
+	err = d.db.QueryRow(dal.FindQuestTotalUsersSql).Scan(&totalUsersSql)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return
+	}
+	if totalUsersSql.Valid {
+		totalUsers = totalUsersSql.Int64
+	}
+	return
+}
+
+func (d *Dao) FindQuestTotalExecutions() (totalExecutions int64, err error) {
+	var (
+		totalExecutionsSql sql.NullInt64
+	)
+	err = d.db.QueryRow(dal.FindQuestTotalExecutionSql, model.UserQuestCompletedStatus).Scan(&totalExecutionsSql)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return
+	}
+	if totalExecutionsSql.Valid {
+		totalExecutions = totalExecutionsSql.Int64
+	}
+	return
+}
+
+func (d *Dao) UpdateCampaignInfo(reward int, totalUsers int64, totalReward int64) (err error) {
+	timestamp := time.Now()
+	_, err = d.db.Exec(dal.UpdateCampaignInfoSql, reward, totalUsers, totalReward, timestamp)
+	return
 }

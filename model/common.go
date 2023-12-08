@@ -19,4 +19,6 @@ const (
 
 	RewardInviteType = "invite"
 	RewardQuestType  = "quest"
+
+	QuestActionDapp = "dapp"
 )

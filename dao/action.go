@@ -84,14 +84,17 @@ func (d *Dao) FindActions(id uint64, limit uint64) (data []*model.Action, err er
 	return
 }
 
-func (d *Dao) FindAllActions(id uint64) (data []*model.Action, err error) {
+func (d *Dao) FindAllActionRecords(id uint64) (data []*model.Action, err error) {
 	var (
 		maxId uint64
 		rows  *sql.Rows
 		limit = uint64(5000)
 	)
-	maxId, err = d.FindMaxId()
+	maxId, err = d.FindActionMaxId()
 	if err != nil {
+		return
+	}
+	if maxId < id {
 		return
 	}
 	for {
@@ -108,10 +111,7 @@ func (d *Dao) FindAllActions(id uint64) (data []*model.Action, err error) {
 			data = append(data, action)
 		}
 		_ = rows.Close()
-		if len(data) == 0 {
-			return
-		}
-		if data[len(data)-1].Id >= maxId {
+		if len(data) > 0 && data[len(data)-1].Id >= maxId {
 			return
 		}
 		id = id + limit + 1
@@ -152,7 +152,7 @@ func (d *Dao) FindRangeActions(fromId uint64, maxId uint64) (data []*model.Actio
 	}
 }
 
-func (d *Dao) FindMaxId() (id uint64, err error) {
+func (d *Dao) FindActionMaxId() (id uint64, err error) {
 	var (
 		maxRecordIdSql sql.NullInt64
 	)

@@ -40,14 +40,14 @@ func Init() (err error) {
 	if Conf.MaxInviteReward <= 0 {
 		Conf.MaxInviteReward = 10000
 	}
-	if Conf.QuestInterval <= 0 {
-		Conf.QuestInterval = 30
-	}
 	if Conf.InviteReward <= 0 {
-		Conf.InviteReward = 10
+		Conf.InviteReward = 5
+	}
+	if Conf.QuestInterval <= 0 {
+		Conf.QuestInterval = 5
 	}
 	if Conf.RankInterval <= 0 {
-		Conf.RankInterval = Conf.InviteReward + 10
+		Conf.RankInterval = 10
 	}
 	return
 }

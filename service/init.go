@@ -25,5 +25,9 @@ func Init(c *conf.Config) (err error) {
 	if err != nil {
 		return
 	}
+	err = DapdapService.dao.InitQuestActionRecord()
+	if err != nil {
+		return
+	}
 	return
 }

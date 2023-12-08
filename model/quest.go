@@ -29,6 +29,7 @@ type QuestAction struct {
 	QuestCampaignId int
 	QuestId         int
 	Times           int
+	Category        string
 	CategoryId      int
 	Source          string
 	Dapps           string
@@ -62,4 +63,13 @@ type QuestCampaignReward struct {
 	Id        int
 	AccountId int
 	Reward    int
+}
+
+type QuestSourceRecord struct {
+	Id              uint64
+	Source          string
+	AccountId       int
+	QuestActionId   int
+	QuestId         int
+	QuestCampaignId int
 }

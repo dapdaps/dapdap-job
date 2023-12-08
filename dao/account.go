@@ -7,6 +7,29 @@ import (
 	"strconv"
 )
 
+func (d *Dao) FindAllAccountId() (data map[string]int, err error) {
+	data = map[string]int{}
+	rows, err := d.db.Query(dal.FindAccountIdSql)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var (
+			accountId int
+			addr      string
+		)
+		if err = rows.Scan(&accountId, &addr); err != nil {
+			return
+		}
+		data[addr] = accountId
+	}
+	return
+}
+
 func (d *Dao) FindAccountIds(addresses map[string]string) (data map[string]int, dataArr []int, err error) {
 	var params []string
 	for addr := range addresses {
