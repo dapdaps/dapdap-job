@@ -162,11 +162,15 @@ func (s *Service) QuestActionTask(allQuest map[int]*model.Quest, allQuestAction 
 			if len(questAction.Source) > 0 && !strings.EqualFold(questAction.Source, action.Source) {
 				continue
 			}
-			if _, ok = questAction.DappsMap[action.DappId]; !ok {
-				continue
+			if len(questAction.DappsMap) > 0 {
+				if _, ok = questAction.DappsMap[action.DappId]; !ok {
+					continue
+				}
 			}
-			if _, ok = questAction.NetworksMap[networks[action.ChainId]]; !ok {
-				continue
+			if len(questAction.NetworksMap) > 0 {
+				if _, ok = questAction.NetworksMap[networks[action.ChainId]]; !ok {
+					continue
+				}
 			}
 			if len(questAction.ToNetworksMap) > 0 {
 				if _, ok = questAction.ToNetworksMap[networks[action.ToCahinId]]; !ok {
