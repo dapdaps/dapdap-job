@@ -1,6 +1,9 @@
 package service
 
 import (
+	"dapdap-job/common/log"
+	"dapdap-job/conf"
+	"flag"
 	"testing"
 )
 
@@ -84,4 +87,19 @@ func TestSelectForUpdate(t *testing.T) {
 	//if err != nil {
 	//	panic(err)
 	//}
+}
+
+func TestTelegram(t *testing.T) {
+	var err error
+	flag.Set("conf", "../testdata/config.toml")
+	if err = conf.Init(); err != nil {
+		panic(err)
+	}
+	log.Init(conf.Conf.Log, conf.Conf.Debug)
+	Init(conf.Conf)
+
+	err = DapdapService.InitTelegram()
+	if err != nil {
+		panic(err)
+	}
 }

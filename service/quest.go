@@ -211,12 +211,12 @@ func (s *Service) QuestActionTask(allQuest map[int]*model.Quest, allQuestAction 
 			accountIdArr = append(accountIdArr, accountId)
 		}
 	}
-	allUserQuests, err = s.dao.FindUserQuest(0, accountIdArr)
+	allUserQuests, err = s.dao.FindUserQuests(0, accountIdArr)
 	if err != nil {
 		log.Error("QuestTask s.dao.FindUserQuest error: %v", err)
 		return
 	}
-	allUserQuestActions, err = s.dao.FindUserQuestAction(0, accountIdArr)
+	allUserQuestActions, err = s.dao.FindUserQuestActions(0, accountIdArr)
 	if err != nil {
 		log.Error("QuestTask s.dao.FindUserQuestAction error: %v", err)
 		return
@@ -389,7 +389,7 @@ func (s *Service) UpdateCacheAccountId(userAddress []string) (err error) {
 	}
 	if len(accountAddress) > 0 {
 		var data map[string]int
-		data, _, err = s.dao.FindAccountId(accountAddress)
+		data, _, err = s.dao.FindAccountIdByAddress(accountAddress)
 		if err != nil {
 			log.Error("QuestTask UpdateCacheAccountId s.dao.FindAccountId error: %v", err)
 			return

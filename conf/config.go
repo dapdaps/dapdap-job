@@ -21,10 +21,16 @@ type Config struct {
 	RankInterval    int64
 	Log             *log.Config
 	Pgsql           *Pgsql
+	Telegram        *Telegram
 }
 
 type Pgsql struct {
 	DB *conf.Pgsql
+}
+
+type Telegram struct {
+	ChatId   int64
+	BotToken string
 }
 
 func init() {

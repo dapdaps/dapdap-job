@@ -10,7 +10,9 @@ const (
 	FindQuestCampaignByNotStatusSql   = `select id,start_time,end_time,status from quest_campaign where status != $1`
 	FindQuestByNotStatusSql           = `select id,start_time,end_time,status from quest where status != $1`
 	FindAllQuestByStatusIdSql         = `select id,quest_campaign_id,quest_category_id,total_action,status,reward from quest where status=$1`
+	FindQuestByIdSql                  = `select id,quest_campaign_id,quest_category_id,total_action,status,reward from quest where id=$1`
 	FindAllQuestActionSql             = `select id,quest_campaign_id,quest_id,times,category,category_id,source,dapps,networks,to_networks from quest_action order by id asc`
+	FindQuestActionByCategorySql      = `select id,quest_campaign_id,quest_id,times,category,category_id,source,dapps,networks,to_networks from quest_action where category=$1 order by id desc limit 1`
 	FindUserQuestSql                  = `select id,quest_campaign_id,quest_id,account_id,action_completed,status from user_quest`
 	FindUserQuestActionSql            = `select id,quest_campaign_id,quest_id,quest_action_id,account_id,times,status from user_quest_action`
 	UpdateUserQuestSql                = `insert into user_quest(account_id,quest_id,quest_campaign_id,action_completed,status,updated_at) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT (account_id,quest_id) DO UPDATE SET action_completed=EXCLUDED.action_completed,status=EXCLUDED.status,updated_at=EXCLUDED.updated_at`
@@ -18,7 +20,6 @@ const (
 	UpdateQuestCampaignStatusSql      = `update quest_campaign set status=$1 where id=$2`
 	UpdateQuestStatusSql              = `update quest set status=$1 where id=$2`
 	UpdateUserQuestStatusSql          = `update user_quest set status=$1 where quest_id=$2`
-	UpdateQuestCampaignInfoSql        = `update quest_campaign_info set total_users=$1,total_quest_execution=$2,updated_at=$3`
 	UpdateTotalRewardSql              = `update quest_campaign_info set total_reward=$1,updated_at=$2`
 	FindCountQuestCampaignInfoSql     = `select count(*) from quest_campaign_info`
 	InitQuestCampaignInfoSql          = `insert into quest_campaign_info(total_users,total_reward,total_quest_execution) VALUES(0,0,0)`

@@ -35,10 +35,10 @@ func (d *Dao) FindAccountIds(addresses map[string]string) (data map[string]int, 
 	for addr := range addresses {
 		params = append(params, addr)
 	}
-	return d.FindAccountId(params)
+	return d.FindAccountIdByAddress(params)
 }
 
-func (d *Dao) FindAccountId(address []string) (data map[string]int, dataArr []int, err error) {
+func (d *Dao) FindAccountIdByAddress(address []string) (data map[string]int, dataArr []int, err error) {
 	var (
 		findSql = dal.FindAccountIdByAddressSql
 		args    []interface{}
@@ -70,6 +70,24 @@ func (d *Dao) FindAccountId(address []string) (data map[string]int, dataArr []in
 		}
 		data[addr] = accountId
 		dataArr = append(dataArr, accountId)
+	}
+	return
+}
+
+func (d *Dao) FindAccountIdByTg(tgUserId int64) (accountId int, err error) {
+	var (
+		userIdSql  sql.NullInt64
+		addressSql sql.NullString
+	)
+	err = d.db.QueryRow(dal.FindAccountIdByTgSql, tgUserId).Scan(&userIdSql, &addressSql)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return
+	}
+	if userIdSql.Valid {
+		accountId = int(userIdSql.Int64)
 	}
 	return
 }
