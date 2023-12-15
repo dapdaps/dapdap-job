@@ -98,8 +98,5 @@ func TestTelegram(t *testing.T) {
 	log.Init(conf.Conf.Log, conf.Conf.Debug)
 	Init(conf.Conf)
 
-	err = DapdapService.InitTelegram()
-	if err != nil {
-		panic(err)
-	}
+	DapdapService.StartTelegram()
 }

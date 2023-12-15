@@ -50,4 +50,8 @@ func (s *Service) StartTask() {
 			time.Sleep(time.Second * time.Duration(conf.Conf.RankInterval))
 		}
 	}()
+
+	go func() {
+		s.StartTelegram()
+	}()
 }

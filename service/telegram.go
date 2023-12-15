@@ -5,19 +5,41 @@ import (
 	"dapdap-job/conf"
 	"dapdap-job/model"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"time"
 )
 
-func (s *Service) InitTelegram() (err error) {
+var (
+	bot *tgbotapi.BotAPI
+)
+
+func (s *Service) StartTelegram() {
+	var (
+		err error
+	)
 	if conf.Conf.Telegram == nil || len(conf.Conf.Telegram.BotToken) == 0 || conf.Conf.Telegram.ChatId == 0 {
 		return
 	}
-	bot, err := tgbotapi.NewBotAPI(conf.Conf.Telegram.BotToken)
-	if err != nil {
-		return
+
+	for {
+		bot, err = tgbotapi.NewBotAPI(conf.Conf.Telegram.BotToken)
+		if err != nil {
+			log.Error("Telegram tgbotapi.NewBotAPI error: %v", err)
+			time.Sleep(time.Second * 5)
+			continue
+		}
+		break
 	}
 	bot.Debug = conf.Conf.Debug
 
-	//log.Printf("Authorized on account %s \n", bot.Self.UserName)
+	for {
+		err = s.RecoverTelegram()
+		if err != nil {
+			log.Error("Telegram RecoverTelegram error: %v", err)
+			time.Sleep(time.Second * 5)
+			continue
+		}
+		break
+	}
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = int(conf.Conf.Timeout)
@@ -34,63 +56,95 @@ func (s *Service) InitTelegram() (err error) {
 				if newChatMember.IsBot {
 					continue
 				}
-				s.ChannelJoin(&newChatMember)
+				s.OnChannelJoin(&newChatMember)
 			}
 		}
-		//msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-		//msg.ReplyToMessageID = update.Message.MessageID
-		//
-		//bot.Send(msg)
 	}
 	return
 }
 
-func (s *Service) ChannelJoin(tgUser *tgbotapi.User) {
+func (s *Service) RecoverTelegram() (err error) {
 	var (
-		accountId       int
-		completed       = 1
-		reward          int
-		questAction     *model.QuestAction
-		quest           *model.Quest
-		userQuestAction *model.UserQuestAction
-		userQuest       *model.UserQuest
-		err             error
+		allAccountExt map[int]*model.AccountExt
+		questAction   *model.QuestAction
+		quest         *model.Quest
+	)
+	questAction, quest, err = s.GetQuestActionByCategory("tg_join")
+	if err != nil || questAction == nil || quest == nil {
+		return
+	}
+	allAccountExt, err = s.dao.FindAllAccountExt()
+	if err != nil {
+		return
+	}
+	for _, accountExt := range allAccountExt {
+		var (
+			userQuestAction *model.UserQuestAction
+		)
+		if accountExt.TelegramUserId <= 0 {
+			continue
+		}
+		userQuestAction, err = s.dao.FindUserQuestAction(accountExt.AccountId, questAction.Id)
+		if err != nil {
+			log.Error("Telegram s.dao.FindUserQuestAction error: %v", err)
+			continue
+		}
+		if userQuestAction != nil {
+			continue
+		}
+		chatMember, e := bot.GetChatMember(tgbotapi.GetChatMemberConfig{
+			ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
+				ChatID: conf.Conf.Telegram.ChatId,
+				UserID: accountExt.TelegramUserId,
+			},
+		})
+		if e != nil {
+			log.Error("Telegram bot.GetChatMember account:%d tgUserId:%d error: %v", accountExt.AccountId, accountExt.TelegramUserId, e)
+			continue
+		}
+		if chatMember.IsMember {
+			e = s.ChannelJoin(accountExt.AccountId, questAction, quest)
+			if e != nil {
+				continue
+			}
+		}
+	}
+	return
+}
+
+func (s *Service) OnChannelJoin(tgUser *tgbotapi.User) {
+	var (
+		accountId   int
+		questAction *model.QuestAction
+		quest       *model.Quest
+		err         error
 	)
 	accountId, err = s.dao.FindAccountIdByTg(tgUser.ID)
 	if err != nil {
-		log.Error("ChannelJoin s.dao.FindAccountIdByTg error: %v", err)
+		log.Error("Telegram s.dao.FindAccountIdByTg error: %v", err)
 		return
 	}
 	if accountId <= 0 {
 		return
 	}
-	questAction, err = s.dao.FindQuestActionByCategory("tg_join")
-	if err != nil {
-		log.Error("ChannelJoin s.dao.FindQuestActionByCategory error: %v", err)
+	questAction, quest, err = s.GetQuestActionByCategory("tg_join")
+	if err != nil || questAction == nil || quest == nil {
 		return
 	}
-	if questAction == nil {
-		return
-	}
-	quest, err = s.dao.FindQuest(questAction.QuestId)
-	if err != nil {
-		log.Error("ChannelJoin s.dao.FindQuest error: %v", err)
-		return
-	}
-	if quest == nil || quest.Status != model.QuestOnGoingStatus {
-		return
-	}
-	userQuestAction, err = s.dao.FindUserQuestAction(accountId, questAction.Id)
-	if err != nil {
-		log.Error("ChannelJoin s.dao.FindUserQuestAction error: %v", err)
-		return
-	}
-	if userQuestAction != nil {
-		return
-	}
+	err = s.ChannelJoin(accountId, questAction, quest)
+	return
+}
+
+func (s *Service) ChannelJoin(accountId int, questAction *model.QuestAction, quest *model.Quest) (err error) {
+	var (
+		userQuestAction *model.UserQuestAction
+		userQuest       *model.UserQuest
+		completed       = 1
+		reward          int
+	)
 	userQuest, err = s.dao.FindUserQuest(accountId, questAction.Id)
 	if err != nil {
-		log.Error("ChannelJoin s.dao.FindUserQuest error: %v", err)
+		log.Error("Telegram s.dao.FindUserQuest error: %v", err)
 		return
 	}
 	if userQuest.Status == model.UserQuestCompletedStatus {
@@ -122,7 +176,29 @@ func (s *Service) ChannelJoin(tgUser *tgbotapi.User) {
 	}
 	err = s.dao.UpdateUserQuest(accountId, reward, []*model.UserQuest{userQuest}, []*model.UserQuestAction{userQuestAction})
 	if err != nil {
-		log.Error("ChannelJoin s.dao.UpdateUserQuest error: %v", err)
+		log.Error("Telegram s.dao.UpdateUserQuest error: %v", err)
 		return
 	}
+	return
+}
+
+func (s *Service) GetQuestActionByCategory(category string) (questAction *model.QuestAction, quest *model.Quest, err error) {
+	questAction, err = s.dao.FindQuestActionByCategory(category)
+	if err != nil {
+		log.Error("Telegram s.dao.FindQuestActionByCategory error: %v", err)
+		return
+	}
+	if questAction == nil {
+		return
+	}
+	quest, err = s.dao.FindQuest(questAction.QuestId)
+	if err != nil {
+		log.Error("Telegram s.dao.FindQuest error: %v", err)
+		return
+	}
+	if quest == nil || quest.Status != model.QuestOnGoingStatus {
+		quest = nil
+		return
+	}
+	return
 }

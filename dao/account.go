@@ -2,6 +2,7 @@ package dao
 
 import (
 	"dapdap-job/common/dal"
+	"dapdap-job/model"
 	"database/sql"
 	"errors"
 	"strconv"
@@ -97,6 +98,52 @@ func (d *Dao) SelectForUpdate(db *sql.Tx, accountId int) (err error) {
 	err = db.QueryRow(dal.FindAccountForUpdateSql, accountId).Scan(&userId)
 	if err != nil {
 		return
+	}
+	return
+}
+
+func (d *Dao) FindAllAccountExt() (data map[int]*model.AccountExt, err error) {
+	data = map[int]*model.AccountExt{}
+	rows, err := d.db.Query(dal.FindAccountExtSql)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var (
+			twitter_user_id              sql.NullString
+			twitter_access_token_type    sql.NullString
+			twitter_access_token_expires sql.NullString
+			twitter_access_token         sql.NullString
+			twitter_refresh_token        sql.NullString
+			telegram_user_id             sql.NullString
+			accountExt                   = &model.AccountExt{}
+		)
+		if err = rows.Scan(&accountExt.AccountId, &twitter_user_id, &twitter_access_token_type, &twitter_access_token_expires, &twitter_access_token, &twitter_refresh_token, &telegram_user_id); err != nil {
+			return
+		}
+		if twitter_user_id.Valid {
+			accountExt.TwitterUserId = twitter_user_id.String
+		}
+		if twitter_access_token_type.Valid {
+			accountExt.TwitterAccessTokenType = twitter_access_token_type.String
+		}
+		if twitter_access_token.Valid {
+			accountExt.TwitterAccessToken = twitter_access_token.String
+		}
+		if twitter_refresh_token.Valid {
+			accountExt.TwitterRefreshToken = twitter_refresh_token.String
+		}
+		if telegram_user_id.Valid {
+			tgUserId, e := strconv.Atoi(telegram_user_id.String)
+			if e == nil {
+				accountExt.TelegramUserId = int64(tgUserId)
+			}
+		}
+		data[accountExt.AccountId] = accountExt
 	}
 	return
 }
