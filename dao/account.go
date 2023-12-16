@@ -77,10 +77,26 @@ func (d *Dao) FindAccountIdByAddress(address []string) (data map[string]int, dat
 
 func (d *Dao) FindAccountIdByTg(tgUserId int64) (accountId int, err error) {
 	var (
-		userIdSql  sql.NullInt64
-		addressSql sql.NullString
+		userIdSql sql.NullInt64
 	)
-	err = d.db.QueryRow(dal.FindAccountIdByTgSql, tgUserId).Scan(&userIdSql, &addressSql)
+	err = d.db.QueryRow(dal.FindAccountIdByTgSql, tgUserId).Scan(&userIdSql)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return
+	}
+	if userIdSql.Valid {
+		accountId = int(userIdSql.Int64)
+	}
+	return
+}
+
+func (d *Dao) FindAccountIdByDiscord(discordUserId string) (accountId int, err error) {
+	var (
+		userIdSql sql.NullInt64
+	)
+	err = d.db.QueryRow(dal.FindAccountIdByDiscordSql, discordUserId).Scan(&userIdSql)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = nil
@@ -120,9 +136,10 @@ func (d *Dao) FindAllAccountExt() (data map[int]*model.AccountExt, err error) {
 			twitter_access_token         sql.NullString
 			twitter_refresh_token        sql.NullString
 			telegram_user_id             sql.NullString
+			discord_user_id              sql.NullString
 			accountExt                   = &model.AccountExt{}
 		)
-		if err = rows.Scan(&accountExt.AccountId, &twitter_user_id, &twitter_access_token_type, &twitter_access_token_expires, &twitter_access_token, &twitter_refresh_token, &telegram_user_id); err != nil {
+		if err = rows.Scan(&accountExt.AccountId, &twitter_user_id, &twitter_access_token_type, &twitter_access_token_expires, &twitter_access_token, &twitter_refresh_token, &telegram_user_id, &discord_user_id); err != nil {
 			return
 		}
 		if twitter_user_id.Valid {
@@ -142,6 +159,9 @@ func (d *Dao) FindAllAccountExt() (data map[int]*model.AccountExt, err error) {
 			if e == nil {
 				accountExt.TelegramUserId = int64(tgUserId)
 			}
+		}
+		if discord_user_id.Valid {
+			accountExt.DiscordUserId = discord_user_id.String
 		}
 		data[accountExt.AccountId] = accountExt
 	}

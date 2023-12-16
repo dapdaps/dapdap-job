@@ -22,6 +22,7 @@ type Config struct {
 	Log             *log.Config
 	Pgsql           *Pgsql
 	Telegram        *Telegram
+	Discord         *Discord
 }
 
 type Pgsql struct {
@@ -31,6 +32,12 @@ type Pgsql struct {
 type Telegram struct {
 	ChatId   int64
 	BotToken string
+}
+
+type Discord struct {
+	GuildId  string
+	BotToken string
+	Role     string
 }
 
 func init() {

@@ -8,4 +8,5 @@ type AccountExt struct {
 	TwitterAccessToken        string
 	TwitterRefreshToken       string
 	TelegramUserId            int64
+	DiscordUserId             string
 }

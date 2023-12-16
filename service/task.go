@@ -54,4 +54,8 @@ func (s *Service) StartTask() {
 	go func() {
 		s.StartTelegram()
 	}()
+
+	go func() {
+		s.StartDiscord()
+	}()
 }

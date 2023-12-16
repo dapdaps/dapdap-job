@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	bot *tgbotapi.BotAPI
+	bot                   *tgbotapi.BotAPI
+	telegramQuestCategory = "tg_join"
 )
 
 func (s *Service) StartTelegram() {
@@ -69,7 +70,7 @@ func (s *Service) RecoverTelegram() (err error) {
 		questAction   *model.QuestAction
 		quest         *model.Quest
 	)
-	questAction, quest, err = s.GetQuestActionByCategory("tg_join")
+	questAction, quest, err = s.GetQuestActionByCategory(telegramQuestCategory)
 	if err != nil || questAction == nil || quest == nil {
 		return
 	}
@@ -104,7 +105,7 @@ func (s *Service) RecoverTelegram() (err error) {
 			continue
 		}
 		if chatMember.IsMember {
-			e = s.ChannelJoin(accountExt.AccountId, questAction, quest)
+			e = s.UpdateTelegramQuest(accountExt.AccountId, questAction, quest)
 			if e != nil {
 				continue
 			}
@@ -128,15 +129,15 @@ func (s *Service) OnChannelJoin(tgUser *tgbotapi.User) {
 	if accountId <= 0 {
 		return
 	}
-	questAction, quest, err = s.GetQuestActionByCategory("tg_join")
+	questAction, quest, err = s.GetQuestActionByCategory(telegramQuestCategory)
 	if err != nil || questAction == nil || quest == nil {
 		return
 	}
-	err = s.ChannelJoin(accountId, questAction, quest)
+	err = s.UpdateTelegramQuest(accountId, questAction, quest)
 	return
 }
 
-func (s *Service) ChannelJoin(accountId int, questAction *model.QuestAction, quest *model.Quest) (err error) {
+func (s *Service) UpdateTelegramQuest(accountId int, questAction *model.QuestAction, quest *model.Quest) (err error) {
 	var (
 		userQuestAction *model.UserQuestAction
 		userQuest       *model.UserQuest
@@ -148,7 +149,7 @@ func (s *Service) ChannelJoin(accountId int, questAction *model.QuestAction, que
 		log.Error("Telegram s.dao.FindUserQuest error: %v", err)
 		return
 	}
-	if userQuest.Status == model.UserQuestCompletedStatus {
+	if userQuest != nil && userQuest.Status == model.UserQuestCompletedStatus {
 		return
 	}
 	if userQuest != nil {

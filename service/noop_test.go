@@ -90,13 +90,27 @@ func TestSelectForUpdate(t *testing.T) {
 }
 
 func TestTelegram(t *testing.T) {
+	//var err error
+	//flag.Set("conf", "../testdata/config.toml")
+	//if err = conf.Init(); err != nil {
+	//	panic(err)
+	//}
+	//log.Init(conf.Conf.Log, conf.Conf.Debug)
+	//Init(conf.Conf)
+	//
+	//DapdapService.StartTelegram()
+}
+
+func TestDiscord(t *testing.T) {
 	var err error
 	flag.Set("conf", "../testdata/config.toml")
 	if err = conf.Init(); err != nil {
 		panic(err)
 	}
 	log.Init(conf.Conf.Log, conf.Conf.Debug)
-	Init(conf.Conf)
-
-	DapdapService.StartTelegram()
+	err = Init(conf.Conf)
+	if err != nil {
+		panic(err)
+	}
+	DapdapService.StartDiscord()
 }
