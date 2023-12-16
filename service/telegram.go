@@ -75,6 +75,7 @@ func (s *Service) RecoverTelegram() (err error) {
 	}
 	allAccountExt, err = s.dao.FindAllAccountExt()
 	if err != nil {
+		log.Error("Telegram s.dao.FindAllAccountExt error: %v", err)
 		return
 	}
 	for _, accountExt := range allAccountExt {
@@ -185,7 +186,7 @@ func (s *Service) ChannelJoin(accountId int, questAction *model.QuestAction, que
 func (s *Service) GetQuestActionByCategory(category string) (questAction *model.QuestAction, quest *model.Quest, err error) {
 	questAction, err = s.dao.FindQuestActionByCategory(category)
 	if err != nil {
-		log.Error("Telegram s.dao.FindQuestActionByCategory error: %v", err)
+		log.Error("GetQuestActionByCategory s.dao.FindQuestActionByCategory error: %v", err)
 		return
 	}
 	if questAction == nil {
@@ -193,7 +194,7 @@ func (s *Service) GetQuestActionByCategory(category string) (questAction *model.
 	}
 	quest, err = s.dao.FindQuest(questAction.QuestId)
 	if err != nil {
-		log.Error("Telegram s.dao.FindQuest error: %v", err)
+		log.Error("GetQuestActionByCategory Telegram s.dao.FindQuest error: %v", err)
 		return
 	}
 	if quest == nil || quest.Status != model.QuestOnGoingStatus {

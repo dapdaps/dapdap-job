@@ -335,6 +335,25 @@ func (d *Dao) FindUserQuestAction(accountId int, questActionId int) (userQuestAc
 	return
 }
 
+func (d *Dao) FindUserQuestActionByQuestId(accountId int, questId int) (data []*model.UserQuestAction, err error) {
+	rows, err := d.db.Query(dal.FindUserQuestActionSql+` where account_id=$1 and quest_id=$2`, accountId, questId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var userQuestAction = &model.UserQuestAction{}
+		if err = rows.Scan(&userQuestAction.Id, &userQuestAction.QuestCampaignId, &userQuestAction.QuestId, &userQuestAction.QuestActionId, &userQuestAction.AccountId, &userQuestAction.Times, &userQuestAction.Status); err != nil {
+			return
+		}
+		data = append(data, userQuestAction)
+	}
+	return
+}
+
 func (d *Dao) FindQuestActionByCategory(category string) (questAction *model.QuestAction, err error) {
 	var (
 		categoryId sql.NullInt64
