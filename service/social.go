@@ -33,7 +33,7 @@ func (s *Service) StartSocialQuest() {
 		s.StartDiscord()
 	}()
 
-	go func() {
-		s.StartTwitter()
-	}()
+	//go func() {
+	//	s.StartTwitter()
+	//}()
 }
