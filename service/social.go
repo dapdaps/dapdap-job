@@ -15,13 +15,17 @@ func (s *Service) StartSocialQuest() {
 	var err error
 
 	for {
-		allAccountExt, maxUpdatedTime, err = s.dao.FindAllAccountExt(maxUpdatedTime)
+		allAccountExt, maxUpdatedTime, err = s.dao.FindAllAccountExt(nil)
 		if err != nil {
 			log.Error("Social s.dao.FindAllAccountExt error: %v", err)
 			time.Sleep(time.Second * 5)
 			continue
 		}
-		log.Info("Social FindAllAccountExt maxUpdateTime: %s", maxUpdatedTime.Format(model.TimeFormat))
+		if maxUpdatedTime != nil {
+			log.Info("Social FindAllAccountExt maxUpdateTime: %s", maxUpdatedTime.Format(model.TimeFormat))
+		} else {
+			log.Info("Social FindAllAccountExt maxUpdateTime:0")
+		}
 		break
 	}
 
