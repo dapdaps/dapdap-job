@@ -7,6 +7,8 @@ type AccountExt struct {
 	TwitterAccessTokenExpires string
 	TwitterAccessToken        string
 	TwitterRefreshToken       string
-	TelegramUserId            int64
+	TelegramUserId            string
 	DiscordUserId             string
+	UpdateTime                int64
+	TwitterQuestCompleted     bool
 }

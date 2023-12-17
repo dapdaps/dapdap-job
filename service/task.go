@@ -51,11 +51,9 @@ func (s *Service) StartTask() {
 		}
 	}()
 
-	go func() {
-		s.StartTelegram()
-	}()
+	go func() {}()
 
 	go func() {
-		s.StartDiscord()
+		s.StartSocialQuest()
 	}()
 }

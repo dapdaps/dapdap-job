@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"strconv"
+	"time"
 )
 
 func (d *Dao) FindAllAccountId() (data map[string]int, err error) {
@@ -75,7 +76,7 @@ func (d *Dao) FindAccountIdByAddress(address []string) (data map[string]int, dat
 	return
 }
 
-func (d *Dao) FindAccountIdByTg(tgUserId int64) (accountId int, err error) {
+func (d *Dao) FindAccountIdByTg(tgUserId string) (accountId int, err error) {
 	var (
 		userIdSql sql.NullInt64
 	)
@@ -118,9 +119,16 @@ func (d *Dao) SelectForUpdate(db *sql.Tx, accountId int) (err error) {
 	return
 }
 
-func (d *Dao) FindAllAccountExt() (data map[int]*model.AccountExt, err error) {
+func (d *Dao) FindAllAccountExt(minUpdateTime *time.Time) (data map[int]*model.AccountExt, maxUpdateTime *time.Time, err error) {
+	var (
+		rows *sql.Rows
+	)
 	data = map[int]*model.AccountExt{}
-	rows, err := d.db.Query(dal.FindAccountExtSql)
+	if minUpdateTime == nil {
+		rows, err = d.db.Query(dal.FindAccountExtSql)
+	} else {
+		rows, err = d.db.Query(dal.FindAccountExtSql+` where updated_at>=$1`, *minUpdateTime)
+	}
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = nil
@@ -137,9 +145,10 @@ func (d *Dao) FindAllAccountExt() (data map[int]*model.AccountExt, err error) {
 			twitter_refresh_token        sql.NullString
 			telegram_user_id             sql.NullString
 			discord_user_id              sql.NullString
+			updateTime                   sql.NullTime
 			accountExt                   = &model.AccountExt{}
 		)
-		if err = rows.Scan(&accountExt.AccountId, &twitter_user_id, &twitter_access_token_type, &twitter_access_token_expires, &twitter_access_token, &twitter_refresh_token, &telegram_user_id, &discord_user_id); err != nil {
+		if err = rows.Scan(&accountExt.AccountId, &twitter_user_id, &twitter_access_token_type, &twitter_access_token_expires, &twitter_access_token, &twitter_refresh_token, &telegram_user_id, &discord_user_id, &updateTime); err != nil {
 			return
 		}
 		if twitter_user_id.Valid {
@@ -155,13 +164,15 @@ func (d *Dao) FindAllAccountExt() (data map[int]*model.AccountExt, err error) {
 			accountExt.TwitterRefreshToken = twitter_refresh_token.String
 		}
 		if telegram_user_id.Valid {
-			tgUserId, e := strconv.Atoi(telegram_user_id.String)
-			if e == nil {
-				accountExt.TelegramUserId = int64(tgUserId)
-			}
+			accountExt.TelegramUserId = telegram_user_id.String
 		}
 		if discord_user_id.Valid {
 			accountExt.DiscordUserId = discord_user_id.String
+		}
+		if updateTime.Valid {
+			if maxUpdateTime == nil || updateTime.Time.After(*maxUpdateTime) {
+				maxUpdateTime = &updateTime.Time
+			}
 		}
 		data[accountExt.AccountId] = accountExt
 	}

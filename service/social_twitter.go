@@ -3,17 +3,19 @@ package service
 import (
 	"dapdap-job/common/log"
 	"dapdap-job/model"
+	"fmt"
+	"github.com/g8rswimmer/go-twitter/v2"
+	"net/http"
 	"time"
 )
 
 var (
-	tfQuestAction                *model.QuestAction
-	tlQuestAction                *model.QuestAction
-	trQuestAction                *model.QuestAction
-	tqQuestAction                *model.QuestAction
-	tcQuestAction                *model.QuestAction
-	tQuest                       *model.Quest
-	allTwitterUserQuestCompleted map[int]bool
+	tfQuestAction *model.QuestAction
+	tlQuestAction *model.QuestAction
+	trQuestAction *model.QuestAction
+	tqQuestAction *model.QuestAction
+	tcQuestAction *model.QuestAction
+	tQuest        *model.Quest
 )
 
 func (s *Service) StartTwitter() {
@@ -83,20 +85,29 @@ func (s *Service) StartTwitter() {
 
 	for {
 		s.CheckTwitter()
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Minute * 1)
 	}
 }
 
 func (s *Service) CheckTwitter() {
 	var (
-		allAccountExt map[int]*model.AccountExt
-		err           error
+		accountExts map[int]*model.AccountExt
+		updatedTime *time.Time
+		err         error
 	)
-	allAccountExt, err = s.dao.FindAllAccountExt()
+	accountExts, updatedTime, err = s.dao.FindAllAccountExt(maxUpdatedTime)
 	if err != nil {
 		log.Error("Twitter s.dao.FindAllAccountExt error: %v", err)
 		return
 	}
+	if len(accountExts) > 0 {
+		for _, accountExt := range accountExts {
+			allAccountExt[accountExt.AccountId] = accountExt
+		}
+		log.Info("Twitter FindAllAccountExt maxUpdateTime: %s", updatedTime.Format(model.TimeFormat))
+		maxUpdatedTime = updatedTime
+	}
+
 	for _, accountExt := range allAccountExt {
 		var (
 			userQuest        *model.UserQuest
@@ -105,7 +116,7 @@ func (s *Service) CheckTwitter() {
 		if len(accountExt.TwitterUserId) == 0 {
 			continue
 		}
-		if _, ok := allTwitterUserQuestCompleted[accountExt.AccountId]; ok {
+		if accountExt.TwitterQuestCompleted {
 			continue
 		}
 		userQuest, err = s.dao.FindUserQuest(accountExt.AccountId, tQuest.Id)
@@ -113,7 +124,8 @@ func (s *Service) CheckTwitter() {
 			log.Error("Twitter s.dao.FindUserQuest error: %v", err)
 			continue
 		}
-		if userQuest.Status == model.UserQuestCompletedStatus {
+		if userQuest != nil && userQuest.Status == model.UserQuestCompletedStatus {
+			accountExt.TwitterQuestCompleted = true
 			continue
 		}
 		userQuestActions, err = s.dao.FindUserQuestActionByQuestId(accountExt.AccountId, tQuest.Id)
@@ -143,6 +155,17 @@ func (s *Service) CheckTwitterFollow(accountExt *model.AccountExt, userQuestActi
 	if hasCompleted {
 		return
 	}
+	//client := getTwitterClient(accountExt.TwitterAccessToken)
+	//opts := twitter.UserFollowedListsOpts{
+	//	//Expansions:  []twitter.Expansion{twitter.ExpansionEntitiesMentionsUserName, twitter.ExpansionAuthorID},
+	//	//TweetFields: []twitter.TweetField{twitter.TweetFieldCreatedAt, twitter.TweetFieldConversationID, twitter.TweetFieldAttachments},
+	//}
+	//data, err := client.UserFollowedLists(context.Background(), accountExt.TwitterUserId, opts)
+	//if err != nil {
+	//	log.Error("Twitter CheckTwitterFollow client.UserFollowedLists error: %v", err)
+	//	return
+	//}
+	//log.Info("data: %v", data)
 	return
 }
 
@@ -210,6 +233,25 @@ func (s *Service) CheckTwitterCreate(accountExt *model.AccountExt, userQuestActi
 	}
 	if hasCompleted {
 		return
+	}
+	return
+}
+
+type authorize struct {
+	Token string
+}
+
+func (a authorize) Add(req *http.Request) {
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", a.Token))
+}
+
+func getTwitterClient(token string) (client *twitter.Client) {
+	client = &twitter.Client{
+		Authorizer: authorize{
+			Token: token,
+		},
+		Client: http.DefaultClient,
+		Host:   "https://api.twitter.com",
 	}
 	return
 }

@@ -5,6 +5,7 @@ import (
 	"dapdap-job/conf"
 	"dapdap-job/model"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"strconv"
 	"time"
 )
 
@@ -51,7 +52,6 @@ func (s *Service) StartTelegram() {
 		if update.Message == nil {
 			continue
 		}
-		//log.Printf("[%s] %s \n", update.Message.From.UserName, update.Message.Text)
 		if update.Message.Chat != nil && update.Message.Chat.ID == conf.Conf.Telegram.ChatId && len(update.Message.NewChatMembers) > 0 {
 			for _, newChatMember := range update.Message.NewChatMembers {
 				if newChatMember.IsBot {
@@ -66,24 +66,19 @@ func (s *Service) StartTelegram() {
 
 func (s *Service) RecoverTelegram() (err error) {
 	var (
-		allAccountExt map[int]*model.AccountExt
-		questAction   *model.QuestAction
-		quest         *model.Quest
+		questAction *model.QuestAction
+		quest       *model.Quest
 	)
 	questAction, quest, err = s.GetQuestActionByCategory(telegramQuestCategory)
 	if err != nil || questAction == nil || quest == nil {
 		return
 	}
-	allAccountExt, err = s.dao.FindAllAccountExt()
-	if err != nil {
-		log.Error("Telegram s.dao.FindAllAccountExt error: %v", err)
-		return
-	}
 	for _, accountExt := range allAccountExt {
 		var (
 			userQuestAction *model.UserQuestAction
+			tgUserId        int
 		)
-		if accountExt.TelegramUserId <= 0 {
+		if len(accountExt.TelegramUserId) <= 0 {
 			continue
 		}
 		userQuestAction, err = s.dao.FindUserQuestAction(accountExt.AccountId, questAction.Id)
@@ -94,10 +89,11 @@ func (s *Service) RecoverTelegram() (err error) {
 		if userQuestAction != nil {
 			continue
 		}
+		tgUserId, _ = strconv.Atoi(accountExt.TelegramUserId)
 		chatMember, e := bot.GetChatMember(tgbotapi.GetChatMemberConfig{
 			ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
 				ChatID: conf.Conf.Telegram.ChatId,
-				UserID: accountExt.TelegramUserId,
+				UserID: int64(tgUserId),
 			},
 		})
 		if e != nil {
@@ -121,7 +117,7 @@ func (s *Service) OnChannelJoin(tgUser *tgbotapi.User) {
 		quest       *model.Quest
 		err         error
 	)
-	accountId, err = s.dao.FindAccountIdByTg(tgUser.ID)
+	accountId, err = s.dao.FindAccountIdByTg(strconv.Itoa(int(tgUser.ID)))
 	if err != nil {
 		log.Error("Telegram s.dao.FindAccountIdByTg error: %v", err)
 		return
