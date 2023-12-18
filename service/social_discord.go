@@ -5,15 +5,19 @@ import (
 	"dapdap-job/conf"
 	"dapdap-job/model"
 	"github.com/bwmarrin/discordgo"
+	"sync"
 	"time"
 )
 
 var (
 	dg                   *discordgo.Session
 	discordQuestCategory = "discord_role"
+	roleUsers            = sync.Map{} //map[discord user id]
+	discordQuestAction   *model.QuestAction
+	discordQuest         *model.Quest
 )
 
-func (s *Service) StartDiscord() {
+func (s *Service) InitDiscord() {
 	var (
 		err error
 	)
@@ -39,63 +43,123 @@ func (s *Service) StartDiscord() {
 	}
 
 	for {
-		err = s.RecoverDiscord()
+		discordQuestAction, discordQuest, err = s.GetQuestActionByCategory(discordQuestCategory)
 		if err != nil {
-			log.Error("Discord RecoverDiscord error: %v", err)
+			log.Error("Discord GetQuestActionByCategory error: %v", err)
 			time.Sleep(time.Second * 5)
 			continue
 		}
 		break
 	}
-	return
+
+	//for {
+	//	err = s.RecoverDiscord()
+	//	if err != nil {
+	//		log.Error("Discord RecoverDiscord error: %v", err)
+	//		time.Sleep(time.Second * 5)
+	//		continue
+	//	}
+	//	break
+	//}
 }
 
-func (s *Service) RecoverDiscord() (err error) {
-	var (
-		questAction *model.QuestAction
-		quest       *model.Quest
-	)
-	questAction, quest, err = s.GetQuestActionByCategory(discordQuestCategory)
-	if err != nil || questAction == nil || quest == nil {
-		return
-	}
-	for _, accountExt := range allAccountExt {
+//func (s *Service) RecoverDiscord() (err error) {
+//	var (
+//		questAction *model.QuestAction
+//		quest       *model.Quest
+//	)
+//	questAction, quest, err = s.GetQuestActionByCategory(discordQuestCategory)
+//	if err != nil || questAction == nil || quest == nil {
+//		return
+//	}
+//	for _, accountExt := range allAccountExt {
+//		var (
+//			userQuestAction *model.UserQuestAction
+//			member          *discordgo.Member
+//			e               error
+//		)
+//		if len(accountExt.DiscordUserId) == 0 {
+//			continue
+//		}
+//		userQuestAction, err = s.dao.FindUserQuestAction(accountExt.AccountId, questAction.Id)
+//		if err != nil {
+//			log.Error("Discord s.dao.FindUserQuestAction error: %v", err)
+//			continue
+//		}
+//		if userQuestAction != nil {
+//			continue
+//		}
+//		member, e = dg.GuildMember(conf.Conf.Discord.GuildId, accountExt.DiscordUserId)
+//		if e != nil {
+//			log.Error("Discord dg.GuildMember error: %v", e)
+//			continue
+//		}
+//		for _, roleID := range member.Roles {
+//			var role *discordgo.Role
+//			role, e = dg.State.Role(conf.Conf.Discord.GuildId, roleID)
+//			if err != nil {
+//				log.Error("Discord dg.State.Role error: %v", e)
+//				continue
+//			}
+//
+//			if role.Name == conf.Conf.Discord.Role {
+//				_ = s.UpdateDiscordQuest(accountExt, questAction, quest)
+//				break
+//			}
+//		}
+//	}
+//	return
+//}
+
+func (s *Service) CheckDiscordQuest(accountExt *model.AccountExt) {
+	_, ok := roleUsers.Load(accountExt.DiscordUserId)
+	if !ok {
+		if !isFristStartQuest {
+			return
+		}
+		if discordQuestAction == nil {
+			return
+		}
 		var (
 			userQuestAction *model.UserQuestAction
 			member          *discordgo.Member
-			e               error
+			hasRole         bool
+			err             error
 		)
-		if len(accountExt.DiscordUserId) == 0 {
-			continue
-		}
-		userQuestAction, err = s.dao.FindUserQuestAction(accountExt.AccountId, questAction.Id)
+		userQuestAction, err = s.dao.FindUserQuestAction(accountExt.AccountId, discordQuestAction.Id)
 		if err != nil {
 			log.Error("Discord s.dao.FindUserQuestAction error: %v", err)
-			continue
+			return
 		}
 		if userQuestAction != nil {
-			continue
+			return
 		}
-		member, e = dg.GuildMember(conf.Conf.Discord.GuildId, accountExt.DiscordUserId)
-		if e != nil {
-			log.Error("Discord dg.GuildMember error: %v", e)
-			continue
+		member, err = dg.GuildMember(conf.Conf.Discord.GuildId, accountExt.DiscordUserId)
+		if err != nil {
+			log.Error("Discord dg.GuildMember error: %v", err)
+			return
 		}
 		for _, roleID := range member.Roles {
 			var role *discordgo.Role
-			role, e = dg.State.Role(conf.Conf.Discord.GuildId, roleID)
+			role, err = dg.State.Role(conf.Conf.Discord.GuildId, roleID)
 			if err != nil {
-				log.Error("Discord dg.State.Role error: %v", e)
+				log.Error("Discord dg.State.Role error: %v", err)
 				continue
 			}
-
 			if role.Name == conf.Conf.Discord.Role {
-				_ = s.UpdateDiscordQuest(accountExt.AccountId, questAction, quest)
+				hasRole = true
+				roleUsers.Store(accountExt.DiscordUserId, true)
 				break
 			}
 		}
+		if !hasRole {
+			return
+		}
 	}
-	return
+	err := s.OnRoleUpdate(accountExt)
+	if err == nil {
+		roleUsers.Delete(accountExt.DiscordUserId)
+	}
 }
 
 func (s *Service) OnMemberUpdate(ds *discordgo.Session, m *discordgo.GuildMemberUpdate) {
@@ -104,9 +168,8 @@ func (s *Service) OnMemberUpdate(ds *discordgo.Session, m *discordgo.GuildMember
 	}
 	for _, roleID := range m.Roles {
 		var (
-			accountId int
-			role      *discordgo.Role
-			err       error
+			role *discordgo.Role
+			err  error
 		)
 		role, err = ds.State.Role(m.GuildID, roleID)
 		if err != nil {
@@ -117,31 +180,22 @@ func (s *Service) OnMemberUpdate(ds *discordgo.Session, m *discordgo.GuildMember
 			continue
 		}
 		log.Info("Discord 用户 %s:%s 获得了角色 %s", m.User.ID, m.User.Username, conf.Conf.Discord.Role)
-		accountId, err = s.dao.FindAccountIdByDiscord(m.User.ID)
-		if err != nil {
-			log.Error("Discord s.dao.FindAccountIdByDiscord error: %v", err)
-			return
-		}
-		if accountId <= 0 {
-			return
-		}
-		s.OnRoleUpdate(accountId)
+		roleUsers.Store(m.User.ID, true)
 		return
 	}
 }
 
-func (s *Service) OnRoleUpdate(accountId int) {
+func (s *Service) OnRoleUpdate(accountExt *model.AccountExt) (err error) {
 	var (
 		userQuestAction *model.UserQuestAction
 		questAction     *model.QuestAction
 		quest           *model.Quest
-		err             error
 	)
 	questAction, quest, err = s.GetQuestActionByCategory(discordQuestCategory)
 	if err != nil || questAction == nil || quest == nil {
 		return
 	}
-	userQuestAction, err = s.dao.FindUserQuestAction(accountId, questAction.Id)
+	userQuestAction, err = s.dao.FindUserQuestAction(accountExt.AccountId, questAction.Id)
 	if err != nil {
 		log.Error("Discord s.dao.FindUserQuestAction error: %v", err)
 		return
@@ -149,18 +203,18 @@ func (s *Service) OnRoleUpdate(accountId int) {
 	if userQuestAction != nil {
 		return
 	}
-	err = s.UpdateDiscordQuest(accountId, questAction, quest)
+	err = s.UpdateDiscordQuest(accountExt, questAction, quest)
 	return
 }
 
-func (s *Service) UpdateDiscordQuest(accountId int, questAction *model.QuestAction, quest *model.Quest) (err error) {
+func (s *Service) UpdateDiscordQuest(accountExt *model.AccountExt, questAction *model.QuestAction, quest *model.Quest) (err error) {
 	var (
 		userQuestAction *model.UserQuestAction
 		userQuest       *model.UserQuest
 		completed       = 1
 		reward          int
 	)
-	userQuest, err = s.dao.FindUserQuest(accountId, questAction.Id)
+	userQuest, err = s.dao.FindUserQuest(accountExt.AccountId, questAction.Id)
 	if err != nil {
 		log.Error("Discord s.dao.FindUserQuest error: %v", err)
 		return
@@ -174,7 +228,7 @@ func (s *Service) UpdateDiscordQuest(accountId int, questAction *model.QuestActi
 		userQuest = &model.UserQuest{
 			QuestId:         quest.Id,
 			QuestCampaignId: quest.QuestCampaignId,
-			AccountId:       accountId,
+			AccountId:       accountExt.AccountId,
 		}
 	}
 	userQuest.ActionCompleted = completed
@@ -188,11 +242,11 @@ func (s *Service) UpdateDiscordQuest(accountId int, questAction *model.QuestActi
 		QuestActionId:   questAction.Id,
 		QuestId:         quest.Id,
 		QuestCampaignId: quest.QuestCampaignId,
-		AccountId:       accountId,
+		AccountId:       accountExt.AccountId,
 		Times:           1,
 		Status:          model.UserQuestActionCompletedStatus,
 	}
-	err = s.dao.UpdateUserQuest(accountId, reward, []*model.UserQuest{userQuest}, []*model.UserQuestAction{userQuestAction})
+	err = s.dao.UpdateUserQuest(accountExt.AccountId, reward, []*model.UserQuest{userQuest}, []*model.UserQuestAction{userQuestAction})
 	if err != nil {
 		log.Error("Discord s.dao.UpdateUserQuest error: %v", err)
 		return

@@ -11,4 +11,6 @@ type AccountExt struct {
 	DiscordUserId             string
 	UpdateTime                int64
 	TwitterQuestCompleted     bool
+	DiscordQuestCompleted     bool
+	TelegramQuestCompleted    bool
 }

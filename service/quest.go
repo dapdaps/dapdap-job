@@ -401,6 +401,27 @@ func (s *Service) UpdateCacheAccountId(userAddress []string) (err error) {
 	return
 }
 
+func (s *Service) GetQuestActionByCategory(category string) (questAction *model.QuestAction, quest *model.Quest, err error) {
+	questAction, err = s.dao.FindQuestActionByCategory(category)
+	if err != nil {
+		log.Error("GetQuestActionByCategory s.dao.FindQuestActionByCategory error: %v", err)
+		return
+	}
+	if questAction == nil {
+		return
+	}
+	quest, err = s.dao.FindQuest(questAction.QuestId)
+	if err != nil {
+		log.Error("GetQuestActionByCategory Telegram s.dao.FindQuest error: %v", err)
+		return
+	}
+	if quest == nil || quest.Status != model.QuestOnGoingStatus {
+		quest = nil
+		return
+	}
+	return
+}
+
 //func (s *Service) CheckQuestStatus(allQuest map[int]*model.Quest, allQuestAction map[int]*model.QuestAction) (err error) {
 //	return
 //}

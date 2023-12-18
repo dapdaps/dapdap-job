@@ -18,12 +18,12 @@ var (
 	tQuest        *model.Quest
 )
 
-func (s *Service) StartTwitter() {
+func (s *Service) InitTwitter() {
 	var (
-		err error
+		quest *model.Quest
+		err   error
 	)
 	for {
-		var quest *model.Quest
 		tfQuestAction, quest, err = s.GetQuestActionByCategory("twitter_follow")
 		if err != nil {
 			time.Sleep(time.Second * 5)
@@ -35,7 +35,6 @@ func (s *Service) StartTwitter() {
 		break
 	}
 	for {
-		var quest *model.Quest
 		tlQuestAction, quest, err = s.GetQuestActionByCategory("twitter_like")
 		if err != nil {
 			time.Sleep(time.Second * 5)
@@ -47,7 +46,6 @@ func (s *Service) StartTwitter() {
 		break
 	}
 	for {
-		var quest *model.Quest
 		trQuestAction, quest, err = s.GetQuestActionByCategory("twitter_retweet")
 		if err != nil {
 			time.Sleep(time.Second * 5)
@@ -59,7 +57,6 @@ func (s *Service) StartTwitter() {
 		break
 	}
 	for {
-		var quest *model.Quest
 		tqQuestAction, quest, err = s.GetQuestActionByCategory("twitter_quote")
 		if err != nil {
 			time.Sleep(time.Second * 5)
@@ -71,7 +68,6 @@ func (s *Service) StartTwitter() {
 		break
 	}
 	for {
-		var quest *model.Quest
 		tcQuestAction, quest, err = s.GetQuestActionByCategory("twitter_create")
 		if err != nil {
 			time.Sleep(time.Second * 5)
@@ -82,63 +78,33 @@ func (s *Service) StartTwitter() {
 		}
 		break
 	}
-
-	for {
-		s.CheckTwitter()
-		time.Sleep(time.Minute * 1)
-	}
 }
 
-func (s *Service) CheckTwitter() {
+func (s *Service) CheckTwitterQuest(accountExt *model.AccountExt) {
 	var (
-		accountExts map[int]*model.AccountExt
-		updatedTime *time.Time
-		err         error
+		userQuest        *model.UserQuest
+		userQuestActions []*model.UserQuestAction
+		err              error
 	)
-	accountExts, updatedTime, err = s.dao.FindAllAccountExt(maxUpdatedTime)
+	userQuest, err = s.dao.FindUserQuest(accountExt.AccountId, tQuest.Id)
 	if err != nil {
-		log.Error("Twitter s.dao.FindAllAccountExt error: %v", err)
+		log.Error("Twitter s.dao.FindUserQuest error: %v", err)
 		return
 	}
-	if len(accountExts) > 0 {
-		for _, accountExt := range accountExts {
-			allAccountExt[accountExt.AccountId] = accountExt
-		}
-		log.Info("Twitter FindAllAccountExt maxUpdateTime: %s", updatedTime.Format(model.TimeFormat))
-		maxUpdatedTime = updatedTime
+	if userQuest != nil && userQuest.Status == model.UserQuestCompletedStatus {
+		accountExt.TwitterQuestCompleted = true
+		return
 	}
-
-	for _, accountExt := range allAccountExt {
-		var (
-			userQuest        *model.UserQuest
-			userQuestActions []*model.UserQuestAction
-		)
-		if len(accountExt.TwitterUserId) == 0 {
-			continue
-		}
-		if accountExt.TwitterQuestCompleted {
-			continue
-		}
-		userQuest, err = s.dao.FindUserQuest(accountExt.AccountId, tQuest.Id)
-		if err != nil {
-			log.Error("Twitter s.dao.FindUserQuest error: %v", err)
-			continue
-		}
-		if userQuest != nil && userQuest.Status == model.UserQuestCompletedStatus {
-			accountExt.TwitterQuestCompleted = true
-			continue
-		}
-		userQuestActions, err = s.dao.FindUserQuestActionByQuestId(accountExt.AccountId, tQuest.Id)
-		if err != nil {
-			log.Error("Twitter s.dao.FindUserQuestActionByQuestId error: %v", err)
-			continue
-		}
-		s.CheckTwitterFollow(accountExt, userQuestActions)
-		s.CheckTwitterFollow(accountExt, userQuestActions)
-		s.CheckTwitterFollow(accountExt, userQuestActions)
-		s.CheckTwitterFollow(accountExt, userQuestActions)
-		s.CheckTwitterFollow(accountExt, userQuestActions)
+	userQuestActions, err = s.dao.FindUserQuestActionByQuestId(accountExt.AccountId, tQuest.Id)
+	if err != nil {
+		log.Error("Twitter s.dao.FindUserQuestActionByQuestId error: %v", err)
+		return
 	}
+	s.CheckTwitterFollow(accountExt, userQuestActions)
+	s.CheckTwitterFollow(accountExt, userQuestActions)
+	s.CheckTwitterFollow(accountExt, userQuestActions)
+	s.CheckTwitterFollow(accountExt, userQuestActions)
+	s.CheckTwitterFollow(accountExt, userQuestActions)
 }
 
 func (s *Service) CheckTwitterFollow(accountExt *model.AccountExt, userQuestActions []*model.UserQuestAction) (updateQuestAction *model.UserQuestAction) {

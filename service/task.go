@@ -54,6 +54,6 @@ func (s *Service) StartTask() {
 	go func() {}()
 
 	go func() {
-		s.StartSocialQuest()
+		s.InitSocialQuest()
 	}()
 }
