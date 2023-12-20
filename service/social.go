@@ -38,16 +38,29 @@ func (s *Service) InitSocialQuest() {
 	go func() {
 		s.StartSocialQuest()
 		isFristStartQuest = false
-		time.Sleep(time.Minute * 3)
+		time.Sleep(time.Second * 1)
 	}()
 }
 
 func (s *Service) StartSocialQuest() {
 	var (
-		accountExts map[int]*model.AccountExt
-		updatedTime *time.Time
-		err         error
+		accountExts    map[int]*model.AccountExt
+		updatedTime    *time.Time
+		totalDiscords  int
+		totalTelegrams int
+		err            error
 	)
+	roleUsers.Range(func(key, value any) bool {
+		totalDiscords++
+		return true
+	})
+	joinUsers.Range(func(key, value any) bool {
+		totalTelegrams++
+		return true
+	})
+	if totalDiscords == 0 && totalTelegrams == 0 {
+		return
+	}
 	accountExts, updatedTime, err = s.dao.FindAllAccountExt(maxUpdatedTime)
 	if err != nil {
 		log.Error("Social s.dao.FindAllAccountExt error: %v", err)
