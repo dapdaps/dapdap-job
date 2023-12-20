@@ -38,7 +38,7 @@ func (s *Service) InitSocialQuest() {
 	go func() {
 		s.StartSocialQuest()
 		isFristStartQuest = false
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Minute * 3)
 	}()
 }
 

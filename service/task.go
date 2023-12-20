@@ -51,8 +51,6 @@ func (s *Service) StartTask() {
 		}
 	}()
 
-	go func() {}()
-
 	go func() {
 		s.InitSocialQuest()
 	}()

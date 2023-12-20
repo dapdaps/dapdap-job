@@ -23,6 +23,7 @@ type Config struct {
 	Pgsql           *Pgsql
 	Telegram        *Telegram
 	Discord         *Discord
+	Twitter         *Twitter
 }
 
 type Pgsql struct {
@@ -38,6 +39,14 @@ type Discord struct {
 	GuildId  string
 	BotToken string
 	Role     string
+}
+
+type Twitter struct {
+	UserId       string
+	Username     string
+	Token        string
+	ReTweetId    string
+	QuoteTweetId string
 }
 
 func init() {
