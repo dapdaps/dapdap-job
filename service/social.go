@@ -28,11 +28,11 @@ func (s *Service) InitSocialQuest() {
 		s.InitDiscord()
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		s.InitTwitter()
-	}()
+	//wg.Add(1)
+	//go func() {
+	//	defer wg.Done()
+	//	s.InitTwitter()
+	//}()
 
 	wg.Wait()
 	go func() {
@@ -67,8 +67,8 @@ func (s *Service) StartSocialQuest() {
 		if !accountExt.TelegramQuestCompleted && len(accountExt.TelegramUserId) > 0 {
 			s.CheckTelegramQuest(accountExt)
 		}
-		if !accountExt.TwitterQuestCompleted && len(accountExt.TwitterUserId) > 0 {
-			s.CheckTwitterQuest(accountExt)
-		}
+		//if !accountExt.TwitterQuestCompleted && len(accountExt.TwitterUserId) > 0 {
+		//	s.CheckTwitterQuest(accountExt)
+		//}
 	}
 }
