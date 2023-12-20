@@ -13,19 +13,20 @@ func (s *Service) StartRankTask() {
 
 func (s *Service) updateRank() {
 	var (
-		totalUsers      int64
-		totalExecutions int64
-		totalReward     int
-		userRewards     []*model.UserReward
-		wg              sync.WaitGroup
-		err             error
+		campaignTotalUsers map[int]map[int]bool
+		totalUsers         int64
+		totalExecutions    int64
+		totalReward        int
+		userRewards        []*model.UserReward
+		wg                 sync.WaitGroup
+		err                error
 	)
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		var e error
-		totalUsers, e = s.dao.FindQuestTotalUsers()
+		campaignTotalUsers, totalUsers, e = s.dao.FindQuestCampaignTotalUsers()
 		if e != nil {
 			log.Error("RankTask s.dao.FindQuestTotalUsers error: %v", e)
 			err = e
@@ -67,6 +68,15 @@ func (s *Service) updateRank() {
 		log.Error("RankTask s.dao.UpdateCampaignInfo error: %v", err)
 		return
 	}
+
+	for campaignId, campaignTotalUser := range campaignTotalUsers {
+		err = s.dao.UpdateCampaignTotalUsers(campaignId, len(campaignTotalUser))
+		if err != nil {
+			log.Error("RankTask s.dao.UpdateCampaignInfo error: %v", err)
+			return
+		}
+	}
+
 	sort.Slice(userRewards, func(i, j int) bool {
 		if userRewards[i].Reward > userRewards[j].Reward {
 			return true

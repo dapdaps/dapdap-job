@@ -585,6 +585,46 @@ func (d *Dao) FindQuestTotalUsers() (totalUsers int64, err error) {
 	return
 }
 
+func (d *Dao) FindQuestCampaignTotalUsers() (campaignTotalUsers map[int]map[int]bool, totalUsers int64, err error) {
+	campaignTotalUsers = map[int]map[int]bool{}
+	rows, err := d.db.Query(dal.FindQuestCampaignTotalUsersSql)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var (
+			accountId         int
+			questCampaignId   int
+			campaignTotalUser map[int]bool
+			hasExist          bool
+			ok                bool
+		)
+		if err = rows.Scan(&accountId, &questCampaignId); err != nil {
+			return
+		}
+		if campaignTotalUser, ok = campaignTotalUsers[questCampaignId]; !ok {
+			campaignTotalUser = map[int]bool{}
+			campaignTotalUsers[questCampaignId] = campaignTotalUser
+		}
+		campaignTotalUser[accountId] = true
+		hasExist = false
+		for _, campaignTotalUser = range campaignTotalUsers {
+			if _, ok = campaignTotalUser[accountId]; ok {
+				hasExist = true
+				break
+			}
+		}
+		if !hasExist {
+			totalUsers++
+		}
+	}
+	return
+}
+
 func (d *Dao) FindQuestTotalExecutions() (totalExecutions int64, err error) {
 	var (
 		totalExecutionsSql sql.NullInt64
@@ -605,6 +645,12 @@ func (d *Dao) FindQuestTotalExecutions() (totalExecutions int64, err error) {
 func (d *Dao) UpdateCampaignInfo(reward int, totalUsers int64, totalReward int64) (err error) {
 	timestamp := time.Now()
 	_, err = d.db.Exec(dal.UpdateCampaignInfoSql, reward, totalUsers, totalReward, timestamp)
+	return
+}
+
+func (d *Dao) UpdateCampaignTotalUsers(id int, totalUsers int) (err error) {
+	timestamp := time.Now()
+	_, err = d.db.Exec(dal.UpdateQuestCampaignTotalUsersSql, totalUsers, timestamp, id)
 	return
 }
 

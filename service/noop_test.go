@@ -1,6 +1,9 @@
 package service
 
 import (
+	"dapdap-job/common/log"
+	"dapdap-job/conf"
+	"flag"
 	"testing"
 )
 
@@ -45,14 +48,14 @@ func TestQuestInit(t *testing.T) {
 }
 
 func TestRank(t *testing.T) {
-	//var err error
-	//flag.Set("conf", "../testdata/config.toml")
-	//if err = conf.Init(); err != nil {
-	//	panic(err)
-	//}
-	//log.Init(conf.Conf.Log, conf.Conf.Debug)
-	//Init(conf.Conf)
-	//DapdapService.StartRankTask()
+	var err error
+	flag.Set("conf", "../testdata/config.toml")
+	if err = conf.Init(); err != nil {
+		panic(err)
+	}
+	log.Init(conf.Conf.Log, conf.Conf.Debug)
+	Init(conf.Conf)
+	DapdapService.StartRankTask()
 }
 
 func TestSelectForUpdate(t *testing.T) {

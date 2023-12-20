@@ -26,6 +26,8 @@ const (
 	FindQuestSourceRecordMaxIdSql     = `select max(id) from quest_source_record`
 	FindQuestSourceRecordByBetweenSql = `select id,source,account_id,quest_action_id,quest_id,quest_campaign_id from quest_source_record where id between $1 and $2 order by id asc`
 	FindQuestTotalUsersSql            = `SELECT count(DISTINCT account_id) AS total_users from user_quest `
+	FindQuestCampaignTotalUsersSql    = `SELECT account_id,quest_campaign_id from user_quest `
 	FindQuestTotalExecutionSql        = `SELECT count(id) AS total_executions from user_quest where status=$1`
 	UpdateCampaignInfoSql             = `update quest_campaign_info set total_reward=$1,total_users=$2,total_quest_execution=$3,updated_at=$4`
+	UpdateQuestCampaignTotalUsersSql  = `update quest_campaign set total_users=$1,updated_at=$2 where id=$3`
 )
