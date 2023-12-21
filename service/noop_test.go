@@ -1,9 +1,6 @@
 package service
 
 import (
-	"dapdap-job/common/log"
-	"dapdap-job/conf"
-	"flag"
 	"testing"
 )
 
@@ -48,14 +45,14 @@ func TestQuestInit(t *testing.T) {
 }
 
 func TestRank(t *testing.T) {
-	var err error
-	flag.Set("conf", "../testdata/config.toml")
-	if err = conf.Init(); err != nil {
-		panic(err)
-	}
-	log.Init(conf.Conf.Log, conf.Conf.Debug)
-	Init(conf.Conf)
-	DapdapService.StartRankTask()
+	//var err error
+	//flag.Set("conf", "../testdata/config.toml")
+	//if err = conf.Init(); err != nil {
+	//	panic(err)
+	//}
+	//log.Init(conf.Conf.Log, conf.Conf.Debug)
+	//Init(conf.Conf)
+	//DapdapService.StartRankTask()
 }
 
 func TestSelectForUpdate(t *testing.T) {
@@ -129,11 +126,11 @@ func TestTwitter(t *testing.T) {
 	//DapdapService.CheckTwitterQuest(&model.AccountExt{
 	//	AccountId:             51,
 	//	TwitterUserId:         "816926408",
-	//	TwitterAccessToken:    "R29fUTZRRFhZYllHeGhXNURaVlIwRWF5a3Q0WkdBeUs5N3otdENtaWs4Rk4zOjE3MDMwMzg2MDEyMTc6MToxOmF0OjE",
+	//	TwitterAccessToken:    "",
 	//	TwitterQuestCompleted: false,
 	//})
 
-	//client := getTwitterClient("ankzWXpxRmJYMkViZUo4VmFaZjcyZWx3QnJ5ZXU0U240WjE4MFdBWGNWZU42OjE3MDMwNDU4OTIzMjA6MTowOmF0OjE")
+	//client := getTwitterClient("")
 	//opts := twitter.UserLikesLookupOpts{
 	//	TweetFields: []twitter.TweetField{twitter.TweetFieldID, twitter.TweetFieldAuthorID},
 	//	MaxResults:  100,

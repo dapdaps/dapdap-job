@@ -612,7 +612,6 @@ func (d *Dao) FindQuestCampaignTotalUsers() (campaignTotalUsers map[int]map[int]
 			campaignTotalUser = map[int]bool{}
 			campaignTotalUsers[questCampaignId] = campaignTotalUser
 		}
-		campaignTotalUser[accountId] = true
 		hasExist = false
 		for _, campaignTotalUser = range campaignTotalUsers {
 			if _, ok = campaignTotalUser[accountId]; ok {
@@ -620,6 +619,7 @@ func (d *Dao) FindQuestCampaignTotalUsers() (campaignTotalUsers map[int]map[int]
 				break
 			}
 		}
+		campaignTotalUser[accountId] = true
 		if !hasExist {
 			totalUsers++
 		}
