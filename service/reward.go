@@ -78,9 +78,9 @@ func (s *Service) updateRank() {
 	}
 
 	sort.Slice(userRewards, func(i, j int) bool {
-		if userRewards[i].Reward > userRewards[j].Reward {
+		if userRewards[i].ClaimedReward > userRewards[j].ClaimedReward {
 			return true
-		} else if userRewards[i].Reward < userRewards[j].Reward {
+		} else if userRewards[i].ClaimedReward < userRewards[j].ClaimedReward {
 			return false
 		} else {
 			return userRewards[i].AccountId > userRewards[j].AccountId
@@ -91,5 +91,8 @@ func (s *Service) updateRank() {
 		log.Error("RankTask s.dao.UpdateUserRewardRank error: %v", err)
 		return
 	}
+	//for index, reward := range userRewards {
+	//	reward.Rank = index + 1
+	//}
 	return
 }

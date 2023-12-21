@@ -1,8 +1,8 @@
 package model
 
 type UserReward struct {
-	Id        int
-	AccountId int
-	Reward    int
-	Rank      int
+	Id            int
+	AccountId     int
+	ClaimedReward int
+	Rank          int
 }

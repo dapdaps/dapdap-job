@@ -10,7 +10,7 @@ import (
 var (
 	allAccountExt     = map[int]*model.AccountExt{}
 	maxUpdatedTime    *time.Time
-	isFristStartQuest = true
+	isFirstStartQuest = true
 )
 
 func (s *Service) InitSocialQuest() {
@@ -37,7 +37,7 @@ func (s *Service) InitSocialQuest() {
 	wg.Wait()
 	go func() {
 		s.StartSocialQuest()
-		isFristStartQuest = false
+		isFirstStartQuest = false
 		time.Sleep(time.Second * 1)
 	}()
 }

@@ -502,9 +502,11 @@ func (d *Dao) UpdateUserRewardRank(data []*model.UserReward) (err error) {
 		}
 		err = d.WithTrx(func(db *sql.Tx) (err error) {
 			for index := from; index < end; index++ {
-				_, err = db.Exec(dal.UpdateUserRewardRankSql, data[index].AccountId, data[index].Reward, index+1, timestamp)
-				if err != nil {
-					return
+				if data[index].Rank != index+1 {
+					_, err = db.Exec(dal.UpdateUserRewardRankSql, data[index].AccountId, data[index].ClaimedReward, index+1, timestamp)
+					if err != nil {
+						return
+					}
 				}
 			}
 			return
@@ -654,7 +656,7 @@ func (d *Dao) UpdateCampaignTotalUsers(id int, totalUsers int) (err error) {
 	return
 }
 
-func (d *Dao) UpdateUserQuest(accountId int, reward int, userQuests []*model.UserQuest, userQuestActions []*model.UserQuestAction) (err error) {
+func (d *Dao) UpdateUserQuest(userQuests []*model.UserQuest, userQuestActions []*model.UserQuestAction) (err error) {
 	timestamp := time.Now()
 	err = d.WithTrx(func(db *sql.Tx) (err error) {
 		for _, userQuest := range userQuests {
@@ -669,22 +671,20 @@ func (d *Dao) UpdateUserQuest(accountId int, reward int, userQuests []*model.Use
 				return
 			}
 		}
-		if reward > 0 {
-			err = d.SelectForUpdate(db, accountId)
-			if err != nil {
-				return
-			}
-			var userReward int
-			userReward, _, err = d.FindUserReward(accountId)
-			if err != nil {
-				return
-			}
-			_, err = db.Exec(dal.UpdateUserRewardByIdSql, accountId, reward+userReward, timestamp)
-			if err != nil {
-				return
-			}
-		}
 		return
 	})
+	return
+}
+
+func (d *Dao) FindLongQuest(category string) (quest *model.QuestLong, err error) {
+	quest = &model.QuestLong{}
+	err = d.db.QueryRow(dal.FindQuestLongSql, category, model.QuestOnGoingStatus).Scan(&quest.Id, &quest.Rule)
+	if err != nil {
+		quest = nil
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return
+	}
 	return
 }

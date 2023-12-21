@@ -94,7 +94,6 @@ func (s *Service) CheckTwitterQuest(accountExt *model.AccountExt) {
 		quoteQuestActionCompleted   *model.UserQuestAction
 		createQuestActionCompleted  *model.UserQuestAction
 		completedUserQuestActions   []*model.UserQuestAction
-		reward                      int
 		err                         error
 	)
 	userQuest, err = s.dao.FindUserQuest(accountExt.AccountId, tQuest.Id)
@@ -149,12 +148,11 @@ func (s *Service) CheckTwitterQuest(accountExt *model.AccountExt) {
 		}
 		userQuest.ActionCompleted = completed
 		if userQuest.ActionCompleted >= tQuest.TotalAction {
-			reward = tQuest.Reward
 			userQuest.Status = model.UserQuestCompletedStatus
 		} else {
 			userQuest.Status = model.UserQuestInProcessStatus
 		}
-		err = s.dao.UpdateUserQuest(accountExt.AccountId, reward, []*model.UserQuest{userQuest}, completedUserQuestActions)
+		err = s.dao.UpdateUserQuest([]*model.UserQuest{userQuest}, completedUserQuestActions)
 		if err != nil {
 			log.Error("CheckTwitterQuest s.dao.UpdateUserQuest error: %v", err)
 			return
@@ -179,35 +177,35 @@ func (s *Service) CheckTwitterFollow(accountExt *model.AccountExt, userQuestActi
 	if hasCompleted {
 		return
 	}
-	//client := getTwitterClient(accountExt.TwitterAccessToken)
-	//opts := twitter.UserFollowedListsOpts{
-	//	UserFields: []twitter.UserField{twitter.UserFieldID},
-	//	MaxResults: 100,
-	//}
-	//data, err := client.UserFollowedLists(context.Background(), accountExt.TwitterUserId, opts)
-	//if err != nil {
-	//	log.Error("Twitter CheckTwitterFollow client.UserFollowedLists error: %v", err)
-	//	return
-	//}
-	//var hasFollow = false
-	//if data.Raw != nil && len(data.Raw.Lists) > 0 {
-	//	for _, user := range data.Raw.Lists {
-	//		if user.ID == conf.Conf.Twitter.UserId {
-	//			hasFollow = true
-	//			break
-	//		}
-	//	}
-	//}
-	//if hasFollow {
-	//	updateQuestAction = &model.UserQuestAction{
-	//		QuestActionId:   tfQuestAction.Id,
-	//		QuestId:         tfQuestAction.QuestId,
-	//		QuestCampaignId: tfQuestAction.QuestCampaignId,
-	//		AccountId:       accountExt.AccountId,
-	//		Times:           1,
-	//		Status:          model.UserQuestActionCompletedStatus,
-	//	}
-	//}
+	client := getTwitterClient(accountExt.TwitterAccessToken)
+	opts := twitter.UserFollowedListsOpts{
+		UserFields: []twitter.UserField{twitter.UserFieldID},
+		MaxResults: 100,
+	}
+	data, err := client.UserFollowedLists(context.Background(), accountExt.TwitterUserId, opts)
+	if err != nil {
+		log.Error("Twitter CheckTwitterFollow client.UserFollowedLists error: %v", err)
+		return
+	}
+	var hasFollow = false
+	if data.Raw != nil && len(data.Raw.Lists) > 0 {
+		for _, user := range data.Raw.Lists {
+			if user.ID == conf.Conf.Twitter.UserId {
+				hasFollow = true
+				break
+			}
+		}
+	}
+	if hasFollow {
+		updateQuestAction = &model.UserQuestAction{
+			QuestActionId:   tfQuestAction.Id,
+			QuestId:         tfQuestAction.QuestId,
+			QuestCampaignId: tfQuestAction.QuestCampaignId,
+			AccountId:       accountExt.AccountId,
+			Times:           1,
+			Status:          model.UserQuestActionCompletedStatus,
+		}
+	}
 	return
 }
 

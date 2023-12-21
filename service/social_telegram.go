@@ -141,7 +141,6 @@ func (s *Service) UpdateTelegramQuest(accountExt *model.AccountExt, questAction 
 		userQuestAction *model.UserQuestAction
 		userQuest       *model.UserQuest
 		completed       = 1
-		reward          int
 	)
 	userQuest, err = s.dao.FindUserQuest(accountExt.AccountId, questAction.Id)
 	if err != nil {
@@ -162,7 +161,6 @@ func (s *Service) UpdateTelegramQuest(accountExt *model.AccountExt, questAction 
 	}
 	userQuest.ActionCompleted = completed
 	if completed >= quest.TotalAction {
-		reward = quest.Reward
 		userQuest.Status = model.UserQuestCompletedStatus
 	} else {
 		userQuest.Status = model.UserQuestInProcessStatus
@@ -175,7 +173,7 @@ func (s *Service) UpdateTelegramQuest(accountExt *model.AccountExt, questAction 
 		Times:           1,
 		Status:          model.UserQuestActionCompletedStatus,
 	}
-	err = s.dao.UpdateUserQuest(accountExt.AccountId, reward, []*model.UserQuest{userQuest}, []*model.UserQuestAction{userQuestAction})
+	err = s.dao.UpdateUserQuest([]*model.UserQuest{userQuest}, []*model.UserQuestAction{userQuestAction})
 	if err != nil {
 		log.Error("Telegram s.dao.UpdateUserQuest error: %v", err)
 		return

@@ -73,3 +73,13 @@ type QuestSourceRecord struct {
 	QuestId         int
 	QuestCampaignId int
 }
+
+type QuestLong struct {
+	Id   int
+	Rule string
+}
+
+type InviteQuestRule struct {
+	Reward    int64
+	MaxReward int64
+}

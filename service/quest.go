@@ -9,10 +9,9 @@ import (
 
 var (
 	maxQuestActionRecordId uint64
-	//campaignInfo           *model.QuestCampaignInfo
-	categories   map[string]int //map[name]id
-	networks     map[int]int    //map[chain_id]id
-	accountIdMap map[string]int
+	categories             map[string]int //map[name]id
+	networks               map[int]int    //map[chain_id]id
+	accountIdMap           map[string]int
 )
 
 func (s *Service) InitQuest() (err error) {
@@ -26,16 +25,6 @@ func (s *Service) InitQuest() (err error) {
 		log.Error("QuestTask s.dao.FindAllAccountId error: %v", err)
 		return
 	}
-	//campaignInfo, err = s.dao.FindQuestCampaignInfo()
-	//if err != nil {
-	//	log.Error("InitQuest s.dao.FindQuestCampaignInfo error: %v", err)
-	//	return
-	//}
-	//err = s.InitQuestCampaignReward()
-	//if err != nil {
-	//	log.Error("InitQuest InitQuestCampaignReward error: %v", err)
-	//	return
-	//}
 	return
 }
 
@@ -113,35 +102,6 @@ func (s *Service) StartQuestTask() (err error) {
 		}
 		maxQuestActionRecordId = maxActionRecordId
 	}
-
-	//err = s.CheckQuestStatus(allQuest, sourceQuestAction)
-	//if err != nil {
-	//	return
-	//}
-
-	//
-	//sourceRecordData, err := s.dao.FindAllSourceRecords(maxQuestActionRecordId + 1)
-	//if err != nil {
-	//	log.Error("QuestTask s.dao.FindAllSourceRecords error: %v", err)
-	//	return
-	//}
-	//if len(sourceRecordData) > 0 {
-	//	maxSourceRecordId := data[len(sourceRecordData)-1].Id
-	//	log.Info("QuestTask source record %d - %d", maxQuestSourceRecordId+1, maxSourceRecordId)
-	//	err = s.QuestSourceTask(sourceRecordData)
-	//	if err != nil {
-	//		return
-	//	}
-	//	for {
-	//		err = s.dao.UpdateSourceRecord(maxSourceRecordId)
-	//		if err != nil {
-	//			log.Error("QuestTask s.dao.UpdateSourceRecord error: %v", err)
-	//			time.Sleep(time.Second * 5)
-	//		}
-	//		break
-	//	}
-	//	maxQuestSourceRecordId = maxSourceRecordId
-	//}
 	return
 }
 
@@ -229,10 +189,7 @@ func (s *Service) QuestActionTask(allQuest map[int]*model.Quest, allQuestAction 
 			userQuestActions        = allUserQuestActions[accountId]
 			saveOrUpdateUserQuests  []*model.UserQuest
 			saveOrUpdateQuestAction []*model.UserQuestAction
-			reward                  int
 			completedQuest          int
-			//newParticipant          = len(userQuests) == 0
-			//updateCampaignInfo      *model.QuestCampaignInfo
 		)
 		if accountId == 0 {
 			continue
@@ -352,30 +309,14 @@ func (s *Service) QuestActionTask(allQuest map[int]*model.Quest, allQuestAction 
 
 		for _, saveOrUpdateQuest := range saveOrUpdateUserQuests {
 			if saveOrUpdateQuest.Status == model.UserQuestCompletedStatus {
-				quest := allQuest[saveOrUpdateQuest.QuestId]
-				reward += quest.Reward
 				completedQuest++
 			}
 		}
-		//if newParticipant || completedQuest > 0 || reward > 0 {
-		//	updateCampaignInfo = &model.QuestCampaignInfo{}
-		//	updateCampaignInfo.TotalQuestExecution = campaignInfo.TotalQuestExecution + completedQuest
-		//	updateCampaignInfo.TotalReward = campaignInfo.TotalReward + reward
-		//	if newParticipant {
-		//		updateCampaignInfo.TotalUsers = campaignInfo.TotalUsers + 1
-		//	}
-		//}
-
-		err = s.dao.UpdateUserQuest(accountId, reward, saveOrUpdateUserQuests, saveOrUpdateQuestAction)
+		err = s.dao.UpdateUserQuest(saveOrUpdateUserQuests, saveOrUpdateQuestAction)
 		if err != nil {
 			log.Error("QuestTask s.dao.UpdateUserQuest error: %v", err)
 			return
 		}
-		//if updateCampaignInfo != nil {
-		//	campaignInfo.TotalUsers = updateCampaignInfo.TotalUsers
-		//	campaignInfo.TotalReward = updateCampaignInfo.TotalReward
-		//	campaignInfo.TotalQuestExecution = updateCampaignInfo.TotalQuestExecution
-		//}
 	}
 	return
 }
@@ -421,141 +362,3 @@ func (s *Service) GetQuestActionByCategory(category string) (questAction *model.
 	}
 	return
 }
-
-//func (s *Service) CheckQuestStatus(allQuest map[int]*model.Quest, allQuestAction map[int]*model.QuestAction) (err error) {
-//	return
-//}
-
-//func (s *Service) QuestSourceTask(data []*model.QuestSourceRecord) (err error) {
-//	var (
-//		allQuest            map[int]*model.Quest
-//		accountIdMap        map[int]int
-//		accountIdArr        []int
-//		allUserQuests       map[int][]*model.UserQuest
-//		allUserQuestActions map[int][]*model.UserQuestAction
-//	)
-//	allQuest, err = s.dao.FindAllQuest(0)
-//	if err != nil {
-//		log.Error("QuestTask s.dao.FindAllQuest error: %v", err)
-//		return
-//	}
-//	if len(allQuest) == 0 {
-//		return
-//	}
-//	for _, record := range data {
-//		if _, ok := accountIdMap[record.AccountId]; ok {
-//			continue
-//		}
-//		accountIdArr = append(accountIdArr, record.AccountId)
-//	}
-//	allUserQuests, err = s.dao.FindUserQuest(0, accountIdArr)
-//	if err != nil {
-//		log.Error("QuestTask s.dao.FindUserQuest error: %v", err)
-//		return
-//	}
-//	allUserQuestActions, err = s.dao.FindUserQuestAction(0, accountIdArr)
-//	if err != nil {
-//		log.Error("QuestTask s.dao.FindUserQuestAction error: %v", err)
-//		return
-//	}
-//	for _, record := range data {
-//		var (
-//			accountId               = record.AccountId
-//			userQuests              = allUserQuests[accountId]
-//			userQuestActions        = allUserQuestActions[accountId]
-//			quest                   *model.Quest
-//			userQuestAction         *model.UserQuestAction
-//			userQuest               *model.UserQuest
-//			reward                  int
-//			completedQuest          int
-//			newParticipant          bool
-//			updateCampaignInfo      *model.QuestCampaignInfo
-//			hasQuestCompleted       bool
-//			hasQuestActionCompleted bool
-//			questActionStatus       string
-//			questStatus             string
-//		)
-//
-//		for _, mUserQuest := range userQuests {
-//			if mUserQuest.QuestId == record.QuestId {
-//				if mUserQuest.Status == model.UserQuestCompletedStatus || mUserQuest.Status == model.UserQuestExpiredStatus {
-//					hasQuestCompleted = true
-//				} else {
-//					userQuest = mUserQuest
-//				}
-//				break
-//			}
-//		}
-//		if hasQuestCompleted {
-//			continue
-//		}
-//
-//		for _, mUserQuestAction := range userQuestActions {
-//			if mUserQuestAction.QuestActionId == record.QuestActionId {
-//				if strings.EqualFold(mUserQuestAction.Status, model.UserQuestActionCompletedStatus) || strings.EqualFold(mUserQuestAction.Status, model.UserQuestActionExpiredStatus) {
-//					hasQuestActionCompleted = true
-//				} else {
-//					userQuestAction = mUserQuestAction
-//				}
-//				break
-//			}
-//		}
-//		if hasQuestActionCompleted {
-//			continue
-//		}
-//
-//		newParticipant = len(userQuests) == 0
-//		quest = allQuest[record.QuestId]
-//		questActionStatus = model.UserQuestActionCompletedStatus
-//		userQuestAction = &model.UserQuestAction{
-//			QuestActionId:   record.QuestActionId,
-//			QuestId:         record.QuestId,
-//			QuestCampaignId: record.QuestCampaignId,
-//			AccountId:       accountId,
-//			Times:           1,
-//			Status:          questActionStatus,
-//		}
-//		if userQuest == nil {
-//			userQuest = &model.UserQuest{
-//				QuestId:         record.QuestId,
-//				QuestCampaignId: record.QuestCampaignId,
-//				AccountId:       accountId,
-//			}
-//			if userQuests == nil {
-//				userQuests = []*model.UserQuest{}
-//			}
-//			userQuests = append(userQuests, userQuest)
-//			allUserQuests[accountId] = userQuests
-//		}
-//		userQuest.ActionCompleted++
-//		if userQuest.ActionCompleted >= quest.TotalAction {
-//			questStatus = model.UserQuestCompletedStatus
-//		} else {
-//			questStatus = model.UserQuestInProcessStatus
-//		}
-//		userQuest.Status = questStatus
-//		if userQuest.Status == model.UserQuestCompletedStatus {
-//			reward += quest.Reward
-//			completedQuest++
-//		}
-//		if newParticipant || completedQuest > 0 || reward > 0 {
-//			updateCampaignInfo = &model.QuestCampaignInfo{}
-//			updateCampaignInfo.TotalQuestExecution = campaignInfo.TotalQuestExecution + completedQuest
-//			updateCampaignInfo.TotalReward = campaignInfo.TotalReward + reward
-//			if newParticipant {
-//				updateCampaignInfo.TotalUsers = campaignInfo.TotalUsers + 1
-//			}
-//		}
-//		err = s.dao.UpdateUserQuest(accountId, record.QuestCampaignId, reward, updateCampaignInfo, []*model.UserQuest{userQuest}, []*model.UserQuestAction{userQuestAction})
-//		if err != nil {
-//			log.Error("QuestTask s.dao.UpdateUserQuest error: %v", err)
-//			return
-//		}
-//		if updateCampaignInfo != nil {
-//			campaignInfo.TotalUsers = updateCampaignInfo.TotalUsers
-//			campaignInfo.TotalReward = updateCampaignInfo.TotalReward
-//			campaignInfo.TotalQuestExecution = updateCampaignInfo.TotalQuestExecution
-//		}
-//	}
-//	return
-//}

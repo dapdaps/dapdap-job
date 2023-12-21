@@ -14,7 +14,6 @@ var (
 	discordQuestCategory = "discord_role"
 	roleUsers            = sync.Map{} //map[discord user id]
 	discordQuestAction   *model.QuestAction
-	discordQuest         *model.Quest
 )
 
 func (s *Service) InitDiscord() {
@@ -43,7 +42,7 @@ func (s *Service) InitDiscord() {
 	}
 
 	for {
-		discordQuestAction, discordQuest, err = s.GetQuestActionByCategory(discordQuestCategory)
+		discordQuestAction, _, err = s.GetQuestActionByCategory(discordQuestCategory)
 		if err != nil {
 			log.Error("Discord GetQuestActionByCategory error: %v", err)
 			time.Sleep(time.Second * 5)
@@ -114,7 +113,7 @@ func (s *Service) InitDiscord() {
 func (s *Service) CheckDiscordQuest(accountExt *model.AccountExt) {
 	_, ok := roleUsers.Load(accountExt.DiscordUserId)
 	if !ok {
-		if !isFristStartQuest {
+		if !isFirstStartQuest {
 			return
 		}
 		if discordQuestAction == nil {
@@ -212,7 +211,6 @@ func (s *Service) UpdateDiscordQuest(accountExt *model.AccountExt, questAction *
 		userQuestAction *model.UserQuestAction
 		userQuest       *model.UserQuest
 		completed       = 1
-		reward          int
 	)
 	userQuest, err = s.dao.FindUserQuest(accountExt.AccountId, questAction.Id)
 	if err != nil {
@@ -233,7 +231,6 @@ func (s *Service) UpdateDiscordQuest(accountExt *model.AccountExt, questAction *
 	}
 	userQuest.ActionCompleted = completed
 	if completed >= quest.TotalAction {
-		reward = quest.Reward
 		userQuest.Status = model.UserQuestCompletedStatus
 	} else {
 		userQuest.Status = model.UserQuestInProcessStatus
@@ -246,7 +243,7 @@ func (s *Service) UpdateDiscordQuest(accountExt *model.AccountExt, questAction *
 		Times:           1,
 		Status:          model.UserQuestActionCompletedStatus,
 	}
-	err = s.dao.UpdateUserQuest(accountExt.AccountId, reward, []*model.UserQuest{userQuest}, []*model.UserQuestAction{userQuestAction})
+	err = s.dao.UpdateUserQuest([]*model.UserQuest{userQuest}, []*model.UserQuestAction{userQuestAction})
 	if err != nil {
 		log.Error("Discord s.dao.UpdateUserQuest error: %v", err)
 		return

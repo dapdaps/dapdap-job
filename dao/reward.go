@@ -24,27 +24,6 @@ func (d *Dao) FindUserRewardMaxId() (id int, err error) {
 	return
 }
 
-func (d *Dao) FindUserReward(accountId int) (reward int, inviteReward int, err error) {
-	var (
-		rewardSql       sql.NullInt64
-		rewardInviteSql sql.NullInt64
-	)
-	err = d.db.QueryRow(dal.FindUserRewardByIdSql, accountId).Scan(&rewardSql, &rewardInviteSql)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			err = nil
-		}
-		return
-	}
-	if rewardSql.Valid {
-		reward = int(rewardSql.Int64)
-	}
-	if rewardInviteSql.Valid {
-		inviteReward = int(rewardInviteSql.Int64)
-	}
-	return
-}
-
 func (d *Dao) FindAllUserReward() (data []*model.UserReward, totalReward int, err error) {
 	var (
 		id    = 0
@@ -67,10 +46,10 @@ func (d *Dao) FindAllUserReward() (data []*model.UserReward, totalReward int, er
 		err = nil
 		for rows.Next() {
 			var userReward = &model.UserReward{}
-			if err = rows.Scan(&userReward.Id, &userReward.AccountId, &userReward.Reward); err != nil {
+			if err = rows.Scan(&userReward.Id, &userReward.AccountId, &userReward.ClaimedReward); err != nil {
 				return
 			}
-			totalReward += userReward.Reward
+			totalReward += userReward.ClaimedReward
 			data = append(data, userReward)
 		}
 		_ = rows.Close()

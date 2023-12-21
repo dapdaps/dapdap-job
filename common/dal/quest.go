@@ -30,4 +30,6 @@ const (
 	FindQuestTotalExecutionSql        = `SELECT count(id) AS total_executions from user_quest where status=$1`
 	UpdateCampaignInfoSql             = `update quest_campaign_info set total_reward=$1,total_users=$2,total_quest_execution=$3,updated_at=$4`
 	UpdateQuestCampaignTotalUsersSql  = `update quest_campaign set total_users=$1,updated_at=$2 where id=$3`
+
+	FindQuestLongSql = `select id,rule from quest_long where category=$1 and statys=$2`
 )
