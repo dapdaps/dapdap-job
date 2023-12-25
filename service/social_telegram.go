@@ -12,7 +12,7 @@ import (
 
 var (
 	bot                   *tgbotapi.BotAPI
-	telegramQuestCategory = "tg_join"
+	telegramQuestCategory = "telegram_join"
 	telegramQuestAction   *model.QuestAction
 	joinUsers             = sync.Map{} //map[tg user id]
 )
