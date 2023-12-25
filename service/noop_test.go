@@ -85,6 +85,20 @@ func TestSelectForUpdate(t *testing.T) {
 	//}
 }
 
+func TestSocial(t *testing.T) {
+	//var err error
+	//flag.Set("conf", "../testdata/config.toml")
+	//if err = conf.Init(); err != nil {
+	//	panic(err)
+	//}
+	//log.Init(conf.Conf.Log, conf.Conf.Debug)
+	//Init(conf.Conf)
+	//DapdapService.InitSocialQuest()
+	//for {
+	//	time.Sleep(time.Minute * 100)
+	//}
+}
+
 func TestTelegram(t *testing.T) {
 	//var err error
 	//flag.Set("conf", "../testdata/config.toml")

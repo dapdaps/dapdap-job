@@ -36,6 +36,7 @@ func (s *Service) InitSocialQuest() {
 
 	wg.Wait()
 	go func() {
+		log.Info("SocialQuestTask time:%d", time.Now().Unix())
 		s.StartSocialQuest()
 		isFirstStartQuest = false
 		time.Sleep(time.Second * 1)
@@ -58,7 +59,7 @@ func (s *Service) StartSocialQuest() {
 		totalTelegrams++
 		return true
 	})
-	if totalDiscords == 0 && totalTelegrams == 0 {
+	if !isFirstStartQuest && totalDiscords == 0 && totalTelegrams == 0 {
 		return
 	}
 	accountExts, updatedTime, err = s.dao.FindAllAccountExt(maxUpdatedTime)
