@@ -12,8 +12,8 @@ import (
 var (
 	dg                   *discordgo.Session
 	discordQuestCategory = "discord_role"
-	roleUsers            = sync.Map{} //map[discord user id]
 	discordQuestAction   *model.QuestAction
+	roleUsers            = sync.Map{} //map[discord user id]
 )
 
 func (s *Service) InitDiscord() {
@@ -34,13 +34,6 @@ func (s *Service) InitDiscord() {
 		break
 	}
 
-	dg.AddHandler(s.OnMemberUpdate)
-	err = dg.Open()
-	if err != nil {
-		log.Error("Discord dg.Open error: %v", err)
-		return
-	}
-
 	for {
 		discordQuestAction, _, err = s.GetQuestActionByCategory(discordQuestCategory)
 		if err != nil {
@@ -49,6 +42,13 @@ func (s *Service) InitDiscord() {
 			continue
 		}
 		break
+	}
+
+	dg.AddHandler(s.OnMemberUpdate)
+	err = dg.Open()
+	if err != nil {
+		log.Error("Discord dg.Open error: %v", err)
+		return
 	}
 
 	//for {

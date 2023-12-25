@@ -13,6 +13,7 @@ import (
 var (
 	bot                   *tgbotapi.BotAPI
 	telegramQuestCategory = "tg_join"
+	telegramQuestAction   *model.QuestAction
 	joinUsers             = sync.Map{} //map[tg user id]
 )
 
@@ -22,6 +23,16 @@ func (s *Service) InitTelegram() {
 	)
 	if conf.Conf.Telegram == nil || len(conf.Conf.Telegram.BotToken) == 0 || conf.Conf.Telegram.ChatId == 0 {
 		return
+	}
+
+	for {
+		telegramQuestAction, _, err = s.GetQuestActionByCategory(telegramQuestCategory)
+		if err != nil {
+			log.Error("Telegram GetQuestActionByCategory error: %v", err)
+			time.Sleep(time.Second * 5)
+			continue
+		}
+		break
 	}
 
 	for {
@@ -114,8 +125,45 @@ func (s *Service) InitTelegram() {
 //}
 
 func (s *Service) CheckTelegramQuest(accountExt *model.AccountExt) {
-	if _, ok := joinUsers.Load(accountExt.TelegramUserId); !ok {
-		return
+	_, ok := joinUsers.Load(accountExt.TelegramUserId)
+	if !ok {
+		if !isFirstStartQuest {
+			return
+		}
+		if telegramQuestAction == nil {
+			return
+		}
+		var (
+			userQuestAction *model.UserQuestAction
+			tgUserId        int
+			err             error
+		)
+		userQuestAction, err = s.dao.FindUserQuestAction(accountExt.AccountId, telegramQuestAction.Id)
+		if err != nil {
+			log.Error("Telegram s.dao.FindUserQuestAction error: %v", err)
+			return
+		}
+		if userQuestAction != nil {
+			return
+		}
+		tgUserId, err = strconv.Atoi(accountExt.TelegramUserId)
+		if err != nil {
+			log.Error("Telegram strconv.Atoi error: %v", err)
+			return
+		}
+		chatMember, err := bot.GetChatMember(tgbotapi.GetChatMemberConfig{
+			ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
+				ChatID: conf.Conf.Telegram.ChatId,
+				UserID: int64(tgUserId),
+			},
+		})
+		if err != nil {
+			log.Error("Telegram bot.GetChatMember account:%d tgUserId:%d error: %v", accountExt.AccountId, accountExt.TelegramUserId, err)
+			return
+		}
+		if !chatMember.IsMember {
+			return
+		}
 	}
 	err := s.OnChannelJoin(accountExt)
 	if err == nil {
