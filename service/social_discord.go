@@ -212,7 +212,7 @@ func (s *Service) UpdateDiscordQuest(accountExt *model.AccountExt, questAction *
 		userQuest       *model.UserQuest
 		completed       = 1
 	)
-	userQuest, err = s.dao.FindUserQuest(accountExt.AccountId, questAction.Id)
+	userQuest, err = s.dao.FindUserQuest(accountExt.AccountId, quest.Id)
 	if err != nil {
 		log.Error("Discord s.dao.FindUserQuest error: %v", err)
 		return

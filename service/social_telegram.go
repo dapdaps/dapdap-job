@@ -190,7 +190,7 @@ func (s *Service) UpdateTelegramQuest(accountExt *model.AccountExt, questAction 
 		userQuest       *model.UserQuest
 		completed       = 1
 	)
-	userQuest, err = s.dao.FindUserQuest(accountExt.AccountId, questAction.Id)
+	userQuest, err = s.dao.FindUserQuest(accountExt.AccountId, quest.Id)
 	if err != nil {
 		log.Error("Telegram s.dao.FindUserQuest error: %v", err)
 		return
