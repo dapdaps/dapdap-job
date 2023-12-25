@@ -142,13 +142,12 @@ func (d *Dao) FindAllAccountExt(minUpdateTime *time.Time) (data map[int]*model.A
 			twitter_access_token_type    sql.NullString
 			twitter_access_token_expires sql.NullString
 			twitter_access_token         sql.NullString
-			twitter_refresh_token        sql.NullString
 			telegram_user_id             sql.NullString
 			discord_user_id              sql.NullString
 			updateTime                   sql.NullTime
 			accountExt                   = &model.AccountExt{}
 		)
-		if err = rows.Scan(&accountExt.AccountId, &twitter_user_id, &twitter_access_token_type, &twitter_access_token_expires, &twitter_access_token, &twitter_refresh_token, &telegram_user_id, &discord_user_id, &updateTime); err != nil {
+		if err = rows.Scan(&accountExt.AccountId, &twitter_user_id, &twitter_access_token_type, &twitter_access_token_expires, &twitter_access_token, &telegram_user_id, &discord_user_id, &updateTime); err != nil {
 			return
 		}
 		if twitter_user_id.Valid {
@@ -159,9 +158,6 @@ func (d *Dao) FindAllAccountExt(minUpdateTime *time.Time) (data map[int]*model.A
 		}
 		if twitter_access_token.Valid {
 			accountExt.TwitterAccessToken = twitter_access_token.String
-		}
-		if twitter_refresh_token.Valid {
-			accountExt.TwitterRefreshToken = twitter_refresh_token.String
 		}
 		if telegram_user_id.Valid {
 			accountExt.TelegramUserId = telegram_user_id.String

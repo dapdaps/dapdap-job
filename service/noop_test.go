@@ -94,7 +94,25 @@ func TestTelegram(t *testing.T) {
 	//log.Init(conf.Conf.Log, conf.Conf.Debug)
 	//Init(conf.Conf)
 	//
-	//DapdapService.StartTelegram()
+	//DapdapService.InitTelegram()
+	//
+	//accountExts, updatedTime, err := DapdapService.dao.FindAllAccountExt(maxUpdatedTime)
+	//if err != nil {
+	//	log.Error("Social s.dao.FindAllAccountExt error: %v", err)
+	//	return
+	//}
+	//if len(accountExts) > 0 {
+	//	for _, accountExt := range accountExts {
+	//		allAccountExt[accountExt.AccountId] = accountExt
+	//	}
+	//	log.Info("Social FindAllAccountExt maxUpdateTime: %s", updatedTime.Format(model.TimeFormat))
+	//	maxUpdatedTime = updatedTime
+	//}
+	//for _, accountExt := range allAccountExt {
+	//	if accountExt.AccountId == 51 && !accountExt.TelegramQuestCompleted && len(accountExt.TelegramUserId) > 0 {
+	//		DapdapService.CheckTelegramQuest(accountExt)
+	//	}
+	//}
 }
 
 func TestDiscord(t *testing.T) {
