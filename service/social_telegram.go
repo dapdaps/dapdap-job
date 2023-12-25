@@ -161,7 +161,7 @@ func (s *Service) CheckTelegramQuest(accountExt *model.AccountExt) {
 			log.Error("Telegram bot.GetChatMember account:%d tgUserId:%d error: %v", accountExt.AccountId, accountExt.TelegramUserId, err)
 			return
 		}
-		if !chatMember.IsMember {
+		if len(chatMember.Status) == 0 || chatMember.Status == "left" || chatMember.Status == "kicked" {
 			return
 		}
 	}
