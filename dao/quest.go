@@ -644,9 +644,9 @@ func (d *Dao) FindQuestTotalExecutions() (totalExecutions int64, err error) {
 	return
 }
 
-func (d *Dao) UpdateCampaignInfo(reward int, totalUsers int64, totalReward int64) (err error) {
+func (d *Dao) UpdateCampaignInfo(totalReward int, totalUsers int64, totalExecutions int64) (err error) {
 	timestamp := time.Now()
-	_, err = d.db.Exec(dal.UpdateCampaignInfoSql, reward, totalUsers, totalReward, timestamp)
+	_, err = d.db.Exec(dal.UpdateCampaignInfoSql, totalReward, totalUsers, totalExecutions, timestamp)
 	return
 }
 
