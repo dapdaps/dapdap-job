@@ -33,14 +33,7 @@ func (s *Service) InitSocialQuest() {
 	//	defer wg.Done()
 	//	s.InitTwitter()
 	//}()
-
 	wg.Wait()
-	go func() {
-		log.Info("SocialQuestTask time:%d", time.Now().Unix())
-		s.StartSocialQuest()
-		isFirstStartQuest = false
-		time.Sleep(time.Second * 1)
-	}()
 }
 
 func (s *Service) StartSocialQuest() {
@@ -51,6 +44,9 @@ func (s *Service) StartSocialQuest() {
 		totalTelegrams int
 		err            error
 	)
+	defer func() {
+		isFirstStartQuest = false
+	}()
 	roleUsers.Range(func(key, value any) bool {
 		totalDiscords++
 		return true

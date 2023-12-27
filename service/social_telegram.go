@@ -46,16 +46,6 @@ func (s *Service) InitTelegram() {
 	}
 	bot.Debug = conf.Conf.Debug
 
-	//for {
-	//	err = s.RecoverTelegram()
-	//	if err != nil {
-	//		log.Error("Telegram RecoverTelegram error: %v", err)
-	//		time.Sleep(time.Second * 5)
-	//		continue
-	//	}
-	//	break
-	//}
-
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = int(conf.Conf.Timeout)
 
@@ -77,52 +67,6 @@ func (s *Service) InitTelegram() {
 		}
 	}()
 }
-
-//func (s *Service) RecoverTelegram() (err error) {
-//	var (
-//		questAction *model.QuestAction
-//		quest       *model.Quest
-//	)
-//	questAction, quest, err = s.GetQuestActionByCategory(telegramQuestCategory)
-//	if err != nil || questAction == nil || quest == nil {
-//		return
-//	}
-//	for _, accountExt := range allAccountExt {
-//		var (
-//			userQuestAction *model.UserQuestAction
-//			tgUserId        int
-//		)
-//		if len(accountExt.TelegramUserId) <= 0 {
-//			continue
-//		}
-//		userQuestAction, err = s.dao.FindUserQuestAction(accountExt.AccountId, questAction.Id)
-//		if err != nil {
-//			log.Error("Telegram s.dao.FindUserQuestAction error: %v", err)
-//			continue
-//		}
-//		if userQuestAction != nil {
-//			continue
-//		}
-//		tgUserId, _ = strconv.Atoi(accountExt.TelegramUserId)
-//		chatMember, e := bot.GetChatMember(tgbotapi.GetChatMemberConfig{
-//			ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
-//				ChatID: conf.Conf.Telegram.ChatId,
-//				UserID: int64(tgUserId),
-//			},
-//		})
-//		if e != nil {
-//			log.Error("Telegram bot.GetChatMember account:%d tgUserId:%d error: %v", accountExt.AccountId, accountExt.TelegramUserId, e)
-//			continue
-//		}
-//		if chatMember.IsMember {
-//			e = s.UpdateTelegramQuest(accountExt, questAction, quest)
-//			if e != nil {
-//				continue
-//			}
-//		}
-//	}
-//	return
-//}
 
 func (s *Service) CheckTelegramQuest(accountExt *model.AccountExt) {
 	_, ok := joinUsers.Load(accountExt.TelegramUserId)
