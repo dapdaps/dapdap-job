@@ -31,6 +31,7 @@ func (s *Service) InitDiscord() {
 			time.Sleep(time.Second * 5)
 			continue
 		}
+		dg.Identify.Intents = discordgo.IntentsGuildMembers
 		break
 	}
 
@@ -50,65 +51,7 @@ func (s *Service) InitDiscord() {
 		log.Error("Discord dg.Open error: %v", err)
 		return
 	}
-
-	//for {
-	//	err = s.RecoverDiscord()
-	//	if err != nil {
-	//		log.Error("Discord RecoverDiscord error: %v", err)
-	//		time.Sleep(time.Second * 5)
-	//		continue
-	//	}
-	//	break
-	//}
 }
-
-//func (s *Service) RecoverDiscord() (err error) {
-//	var (
-//		questAction *model.QuestAction
-//		quest       *model.Quest
-//	)
-//	questAction, quest, err = s.GetQuestActionByCategory(discordQuestCategory)
-//	if err != nil || questAction == nil || quest == nil {
-//		return
-//	}
-//	for _, accountExt := range allAccountExt {
-//		var (
-//			userQuestAction *model.UserQuestAction
-//			member          *discordgo.Member
-//			e               error
-//		)
-//		if len(accountExt.DiscordUserId) == 0 {
-//			continue
-//		}
-//		userQuestAction, err = s.dao.FindUserQuestAction(accountExt.AccountId, questAction.Id)
-//		if err != nil {
-//			log.Error("Discord s.dao.FindUserQuestAction error: %v", err)
-//			continue
-//		}
-//		if userQuestAction != nil {
-//			continue
-//		}
-//		member, e = dg.GuildMember(conf.Conf.Discord.GuildId, accountExt.DiscordUserId)
-//		if e != nil {
-//			log.Error("Discord dg.GuildMember error: %v", e)
-//			continue
-//		}
-//		for _, roleID := range member.Roles {
-//			var role *discordgo.Role
-//			role, e = dg.State.Role(conf.Conf.Discord.GuildId, roleID)
-//			if err != nil {
-//				log.Error("Discord dg.State.Role error: %v", e)
-//				continue
-//			}
-//
-//			if role.Name == conf.Conf.Discord.Role {
-//				_ = s.UpdateDiscordQuest(accountExt, questAction, quest)
-//				break
-//			}
-//		}
-//	}
-//	return
-//}
 
 func (s *Service) CheckDiscordQuest(accountExt *model.AccountExt) {
 	_, ok := roleUsers.Load(accountExt.DiscordUserId)
@@ -165,23 +108,26 @@ func (s *Service) OnMemberUpdate(ds *discordgo.Session, m *discordgo.GuildMember
 	if m.GuildID != conf.Conf.Discord.GuildId {
 		return
 	}
-	for _, roleID := range m.Roles {
-		var (
-			role *discordgo.Role
-			err  error
-		)
-		role, err = ds.State.Role(m.GuildID, roleID)
-		if err != nil {
-			log.Error("Discord ds.State.Role error: %v", err)
-			continue
-		}
-		if role.Name != conf.Conf.Discord.Role {
-			continue
-		}
-		log.Info("Discord 用户 %s:%s 获得了角色 %s", m.User.ID, m.User.Username, conf.Conf.Discord.Role)
+	if len(m.Roles) > 0 {
 		roleUsers.Store(m.User.ID, true)
-		return
 	}
+	//for _, roleID := range m.Roles {
+	//	var (
+	//		role *discordgo.Role
+	//		err  error
+	//	)
+	//	role, err = ds.State.Role(m.GuildID, roleID)
+	//	if err != nil {
+	//		log.Error("Discord ds.State.Role error: %v", err)
+	//		continue
+	//	}
+	//	if role.Name != conf.Conf.Discord.Role {
+	//		continue
+	//	}
+	//	log.Info("Discord 用户 %s:%s 获得了角色 %s", m.User.ID, m.User.Username, conf.Conf.Discord.Role)
+	//	roleUsers.Store(m.User.ID, true)
+	//	return
+	//}
 }
 
 func (s *Service) OnRoleUpdate(accountExt *model.AccountExt) (err error) {

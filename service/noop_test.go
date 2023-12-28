@@ -140,7 +140,11 @@ func TestDiscord(t *testing.T) {
 	//if err != nil {
 	//	panic(err)
 	//}
-	//DapdapService.StartDiscord()
+	//DapdapService.InitDiscord()
+	//
+	//for {
+	//
+	//}
 }
 
 func TestTwitter(t *testing.T) {
