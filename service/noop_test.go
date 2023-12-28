@@ -140,10 +140,11 @@ func TestDiscord(t *testing.T) {
 	//if err != nil {
 	//	panic(err)
 	//}
-	//DapdapService.InitDiscord()
-	//
+	//DapdapService.InitSocialQuest()
 	//for {
-	//
+	//	log.Info("SocialQuestTask time:%d", time.Now().Unix())
+	//	DapdapService.StartSocialQuest()
+	//	time.Sleep(time.Second * 1)
 	//}
 }
 

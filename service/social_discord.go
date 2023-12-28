@@ -98,10 +98,10 @@ func (s *Service) CheckDiscordQuest(accountExt *model.AccountExt) {
 			return
 		}
 	}
-	err := s.OnRoleUpdate(accountExt)
-	if err == nil {
-		roleUsers.Delete(accountExt.DiscordUserId)
-	}
+	_ = s.OnRoleUpdate(accountExt)
+	//if err == nil {
+	//	roleUsers.Delete(accountExt.DiscordUserId)
+	//}
 }
 
 func (s *Service) OnMemberUpdate(ds *discordgo.Session, m *discordgo.GuildMemberUpdate) {
@@ -109,6 +109,7 @@ func (s *Service) OnMemberUpdate(ds *discordgo.Session, m *discordgo.GuildMember
 		return
 	}
 	if len(m.Roles) > 0 {
+		log.Info("Discord OnMemberUpdate ID: %s", m.User.ID)
 		roleUsers.Store(m.User.ID, true)
 	}
 	//for _, roleID := range m.Roles {

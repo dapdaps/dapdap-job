@@ -54,7 +54,7 @@ func (s *Service) StartTask() {
 	go func() {
 		s.InitSocialQuest()
 		for {
-			log.Info("SocialQuestTask time:%d", time.Now().Unix())
+			//log.Info("SocialQuestTask time:%d", time.Now().Unix())
 			s.StartSocialQuest()
 			time.Sleep(time.Second * 1)
 		}

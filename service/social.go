@@ -55,12 +55,15 @@ func (s *Service) StartSocialQuest() {
 		totalTelegrams++
 		return true
 	})
-	if !isFirstStartQuest && totalDiscords == 0 && totalTelegrams == 0 {
-		return
-	}
+	//if !isFirstStartQuest && totalDiscords == 0 && totalTelegrams == 0 {
+	//	return
+	//}
 	accountExts, updatedTime, err = s.dao.FindAllAccountExt(maxUpdatedTime)
 	if err != nil {
 		log.Error("Social s.dao.FindAllAccountExt error: %v", err)
+		return
+	}
+	if !isFirstStartQuest && len(accountExts) == 0 && totalDiscords == 0 && totalTelegrams == 0 {
 		return
 	}
 	if len(accountExts) > 0 {

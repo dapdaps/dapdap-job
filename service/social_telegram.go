@@ -109,10 +109,10 @@ func (s *Service) CheckTelegramQuest(accountExt *model.AccountExt) {
 			return
 		}
 	}
-	err := s.OnChannelJoin(accountExt)
-	if err == nil {
-		roleUsers.Delete(accountExt.TelegramUserId)
-	}
+	_ = s.OnChannelJoin(accountExt)
+	//if err == nil {
+	//	joinUsers.Delete(accountExt.TelegramUserId)
+	//}
 }
 
 func (s *Service) OnChannelJoin(accountExt *model.AccountExt) (err error) {
