@@ -63,7 +63,7 @@ func (s *Service) StartSocialQuest() {
 		log.Error("Social s.dao.FindAllAccountExt error: %v", err)
 		return
 	}
-	if !isFirstStartQuest && len(accountExts) == 0 && totalDiscords == 0 && totalTelegrams == 0 {
+	if !isFirstStartQuest && len(accountExts) == 0 {
 		return
 	}
 	if len(accountExts) > 0 {
@@ -74,11 +74,18 @@ func (s *Service) StartSocialQuest() {
 		maxUpdatedTime = updatedTime
 	}
 	for _, accountExt := range allAccountExt {
+		var forceCheck = false
+		for _, accountExtTemp := range accountExts {
+			if accountExtTemp.AccountId == accountExt.AccountId {
+				forceCheck = true
+				break
+			}
+		}
 		if !accountExt.DiscordQuestCompleted && len(accountExt.DiscordUserId) > 0 {
-			s.CheckDiscordQuest(accountExt)
+			s.CheckDiscordQuest(accountExt, isFirstStartQuest || forceCheck)
 		}
 		if !accountExt.TelegramQuestCompleted && len(accountExt.TelegramUserId) > 0 {
-			s.CheckTelegramQuest(accountExt)
+			s.CheckTelegramQuest(accountExt, isFirstStartQuest || forceCheck)
 		}
 		//if !accountExt.TwitterQuestCompleted && len(accountExt.TwitterUserId) > 0 {
 		//	s.CheckTwitterQuest(accountExt)

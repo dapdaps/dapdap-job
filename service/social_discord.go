@@ -53,10 +53,10 @@ func (s *Service) InitDiscord() {
 	}
 }
 
-func (s *Service) CheckDiscordQuest(accountExt *model.AccountExt) {
+func (s *Service) CheckDiscordQuest(accountExt *model.AccountExt, forceCheck bool) {
 	_, ok := roleUsers.Load(accountExt.DiscordUserId)
 	if !ok {
-		if !isFirstStartQuest {
+		if !forceCheck {
 			return
 		}
 		if discordQuestAction == nil {

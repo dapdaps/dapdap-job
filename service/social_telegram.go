@@ -68,10 +68,10 @@ func (s *Service) InitTelegram() {
 	}()
 }
 
-func (s *Service) CheckTelegramQuest(accountExt *model.AccountExt) {
+func (s *Service) CheckTelegramQuest(accountExt *model.AccountExt, forceCheck bool) {
 	_, ok := joinUsers.Load(accountExt.TelegramUserId)
 	if !ok {
-		if !isFirstStartQuest {
+		if !forceCheck {
 			return
 		}
 		if telegramQuestAction == nil {
