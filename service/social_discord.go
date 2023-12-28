@@ -81,19 +81,20 @@ func (s *Service) CheckDiscordQuest(accountExt *model.AccountExt, forceCheck boo
 			log.Error("Discord dg.GuildMember error: %v", err)
 			return
 		}
-		for _, roleID := range member.Roles {
-			var role *discordgo.Role
-			role, err = dg.State.Role(conf.Conf.Discord.GuildId, roleID)
-			if err != nil {
-				log.Error("Discord dg.State.Role error: %v", err)
-				continue
-			}
-			if role.Name == conf.Conf.Discord.Role {
-				hasRole = true
-				roleUsers.Store(accountExt.DiscordUserId, true)
-				break
-			}
-		}
+		hasRole = len(member.Roles) > 0
+		//for _, roleID := range member.Roles {
+		//	var role *discordgo.Role
+		//	role, err = dg.State.Role(conf.Conf.Discord.GuildId, roleID)
+		//	if err != nil {
+		//		log.Error("Discord dg.State.Role error: %v", err)
+		//		continue
+		//	}
+		//	if role.Name == conf.Conf.Discord.Role {
+		//		hasRole = true
+		//		roleUsers.Store(accountExt.DiscordUserId, true)
+		//		break
+		//	}
+		//}
 		if !hasRole {
 			return
 		}
