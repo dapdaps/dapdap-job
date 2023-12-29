@@ -127,7 +127,7 @@ func (d *Dao) FindAllAccountExt(minUpdateTime *time.Time) (data map[int]*model.A
 	if minUpdateTime == nil {
 		rows, err = d.db.Query(dal.FindAccountExtSql)
 	} else {
-		rows, err = d.db.Query(dal.FindAccountExtSql+` where updated_at>=$1`, *minUpdateTime)
+		rows, err = d.db.Query(dal.FindAccountExtSql+` where updated_at>$1`, *minUpdateTime)
 	}
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

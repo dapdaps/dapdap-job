@@ -63,7 +63,7 @@ func (s *Service) StartSocialQuest() {
 		log.Error("Social s.dao.FindAllAccountExt error: %v", err)
 		return
 	}
-	if !isFirstStartQuest && len(accountExts) == 0 {
+	if !isFirstStartQuest && len(accountExts) == 0 && totalDiscords == 0 && totalTelegrams == 0 {
 		return
 	}
 	if len(accountExts) > 0 {
