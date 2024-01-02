@@ -115,8 +115,21 @@ func (s *Service) QuestActionTask(allQuest map[int]*model.Quest, allQuestAction 
 	)
 	for _, action := range data {
 		for _, questAction := range allQuestAction {
-			var ok bool
-			if questAction.CategoryId != categories[action.ActionType] {
+			var (
+				ok         bool
+				categoryId int
+				actionType = action.ActionType
+			)
+			if strings.EqualFold(actionType, "Deposit") {
+				for category, cateId := range categories {
+					if strings.EqualFold(category, "Liquidity") {
+						categoryId = cateId
+					}
+				}
+			} else {
+				categoryId = categories[action.ActionType]
+			}
+			if questAction.CategoryId != categoryId {
 				continue
 			}
 			if len(questAction.Source) > 0 && !strings.EqualFold(questAction.Source, action.Source) {
